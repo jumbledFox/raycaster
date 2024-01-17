@@ -9,5 +9,8 @@ edition = "2021"
 error-iter = "0.4.1"
 log = "0.4.20"
 pixels = "0.13.0"
+pixels_primitives = "0.1.1"
 winit = {version = "0.29.10", features = ["rwh_05"]}
 winit_input_helper = "0.15.2"
+# winit = "0.28"
+# winit_input_helper = "0.14"
