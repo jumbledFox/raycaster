@@ -145,25 +145,25 @@ fn draw(screen: &mut [u8], player_pos: &[f64; 2], mouse_pos: &[f64; 2]) {
     // let screen_slices: [[bool; WIDTH]; MAP_HEIGHT];
     // let col: [u8; 4] = [0x00, 0x00, 0xFF, 0xFF];
 
-    // for i in 0..map.len() {
-    //     if map[i] == 0 { continue; }
-    //     let x = i % MAP_WIDTH;
-    //     let y = i / MAP_WIDTH % MAP_HEIGHT;
-    //     let screen_slc: [u8; 4*MAP_HEIGHT*GRID_SIZE as usize];
+    for i in 0..map.len() {
+        if map[i] == 0 { continue; }
+        let x = i % MAP_WIDTH;
+        let y = i / MAP_WIDTH % MAP_HEIGHT;
+        // let screen_slc: [u8; 4*MAP_HEIGHT*GRID_SIZE as usize];
         
-    //     for i in 0..GRID_SIZE {
+        // for i in 0..GRID_SIZE {
         
-    //     }
+        // }
 
-    //     for (i, pix) in screen.chunks_exact_mut(4).enumerate() {
-    //         let y = i % WIDTH as usize;
-    //     } 
-    //     screen[i * 4 * GRID_SIZE as usize + y * (GRID_SIZE) as usize * MAP_WIDTH] = 0xFF;
-    //     // pixels_primitives::square_filled(screen, WIDTH as i32,
-    //     //     (x as u32*GRID_SIZE)as f64+(GRID_SIZE as f64/2.0),
-    //     //     (y as u32*GRID_SIZE)as f64+(GRID_SIZE as f64/2.0),
-    //     //     GRID_SIZE.into(), &[0x00, 0x00, 0xFF, 0xFF]);
-    // }
+        // for (i, pix) in screen.chunks_exact_mut(4).enumerate() {
+        //     let y = i % WIDTH as usize;
+        // } 
+        screen[i * 4 * GRID_SIZE as usize + y * (GRID_SIZE) as usize * MAP_WIDTH] = 0xFF;
+        // pixels_primitives::square_filled(screen, WIDTH as i32,
+        //     (x as u32*GRID_SIZE)as f64+(GRID_SIZE as f64/2.0),
+        //     (y as u32*GRID_SIZE)as f64+(GRID_SIZE as f64/2.0),
+        //     GRID_SIZE.into(), &[0x00, 0x00, 0xFF, 0xFF]);
+    }
     // Draw player
     pixels_primitives::circle(screen, WIDTH as i32,
         player_pos[0] * GRID_SIZE as f64, player_pos[1] * GRID_SIZE as f64, 5.0, 1.0, &[0x00, 0xFF, 0x00, 0xFF]);
