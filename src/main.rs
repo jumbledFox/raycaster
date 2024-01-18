@@ -21,15 +21,15 @@ const MAP_WIDTH : usize = 48;
 const MAP_HEIGHT: usize = 27;
 static map: [usize; MAP_WIDTH*MAP_HEIGHT] = [
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,
-    1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,1,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+    1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,
+    1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,0,1,0,1,1,1,0,0,0,0,0,0,0,1,0,0,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,
+    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -76,13 +76,14 @@ fn main() {
     let mut player_dir = [1.0, 0.0];
     //let mut cam_plane: [f64; 2] = [0.0, -1.0];
     let mut mouse_pos: [f64; 2] = [0.0, 0.0];
+    let mut check_points: Vec<[f64; 2]> = Vec::with_capacity(10);
     let mut hit_pos: Option<[f64; 2]> = None;
 
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
             match event {
                 WindowEvent::RedrawRequested => {
-                    draw(pixels.frame_mut(), &player_pos, &mouse_pos, &hit_pos);
+                    draw(pixels.frame_mut(), &player_pos, &mouse_pos, &hit_pos, &check_points);
                     if let Err(err) = pixels.render() {
                         return log_error("pixels.render", err, &control_flow);
                     }
@@ -121,18 +122,21 @@ fn main() {
             // Player diretion = 
             player_dir = [(mouse_pos[0]/GRID_SIZE as f64)-player_pos[0], (mouse_pos[1]/GRID_SIZE as f64)-player_pos[1]];
             let len = f64::sqrt(player_dir[0].powi(2) + player_dir[1].powi(2));
-            player_dir = [player_dir[0] / len / 5.0, player_dir[1] / len / 5.0];
+            //player_dir = [player_dir[0] / len / 5.0, player_dir[1] / len / 5.0];
+            player_dir = [player_dir[0] / len, player_dir[1] / len];
             // Calculate ray
             let ray_dir: [f64; 2] = player_dir;
 
             let mut ray_pos = player_pos;
+            check_points.clear();
+            hit_pos = None;
             //hit_pos = [ray_pos[0] + ray_dir[0], ray_pos[1] + ray_dir[1]];
             for i in 0..1000 {
                 ray_pos = [ray_pos[0] + ray_dir[0], ray_pos[1] + ray_dir[1]];
+                check_points.push(ray_pos);
                 if ray_pos[0] < 0.0 || ray_pos[0].ceil() > MAP_WIDTH  as f64 || 
                    ray_pos[1] < 0.0 || ray_pos[1].ceil() > MAP_HEIGHT as f64 {
-                    hit_pos = None;
-                    break;
+                    continue;
                 }
                 let map_x = ray_pos[0].floor() as usize;
                 let map_y = ray_pos[1].floor() as usize;
@@ -160,7 +164,7 @@ fn log_error<E: std::error::Error + 'static>(method_name: &str, err: E, control_
     control_flow.exit();
 }
 
-fn draw(screen: &mut [u8], player_pos: &[f64; 2], mouse_pos: &[f64; 2], hit_pos: &Option<[f64; 2]>) {
+fn draw(screen: &mut [u8], player_pos: &[f64; 2], mouse_pos: &[f64; 2], hit_pos: &Option<[f64; 2]>, check_points: &Vec<[f64; 2]>) {
     // Clear screen
     screen.copy_from_slice(&[0x00, 0x00, 0x00, 0xFF].repeat(screen.len()/4));
 
@@ -204,10 +208,10 @@ fn draw(screen: &mut [u8], player_pos: &[f64; 2], mouse_pos: &[f64; 2], hit_pos:
     pixels_primitives::circle(screen, WIDTH as i32,
         mouse_pos[0], mouse_pos[1], 5.0, 1.0, &[0xFF, 0x00, 0x00, 0xFF]);
     // Draw line
-    pixels_primitives::line(screen, WIDTH as i32,
-        player_pos[0] * GRID_SIZE as f64, player_pos[1] * GRID_SIZE as f64,
-        mouse_pos[0], mouse_pos[1],
-        &[0x77, 0x77, 0x77, 0xFF]);
+    // pixels_primitives::line(screen, WIDTH as i32,
+    //     player_pos[0] * GRID_SIZE as f64, player_pos[1] * GRID_SIZE as f64,
+    //     mouse_pos[0], mouse_pos[1],
+    //     &[0x77, 0x77, 0x77, 0xFF]);
     if let Some(hit_pos) = hit_pos {
         // Draw hit point
         pixels_primitives::circle(screen, WIDTH as i32,
@@ -217,6 +221,10 @@ fn draw(screen: &mut [u8], player_pos: &[f64; 2], mouse_pos: &[f64; 2], hit_pos:
             hit_pos[0] * GRID_SIZE as f64, hit_pos[1] * GRID_SIZE as f64,
             player_pos[0] * GRID_SIZE as f64, player_pos[1] * GRID_SIZE as f64,
             &[0x77, 0x77, 0x77, 0xFF]);
+    }
+    for c in check_points {
+        pixels_primitives::circle_filled(screen, WIDTH as i32,
+            c[0] * GRID_SIZE as f64, c[1] * GRID_SIZE as f64, 2.0, &[0x92, 0x92, 0x92, 0xFF]);
     }
 
 }
