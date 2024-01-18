@@ -134,7 +134,7 @@ fn main() {
             // I'm keeping the comment below as a remnant of a simpler time: 
             // Player diretion = 
             player_dir = ((mouse_pos/GRID_SIZE as f64) - player_pos).normalize();
-            cam_plane = Vector2::new(player_dir.y, -player_dir.x);
+            cam_plane = Vector2::new(-player_dir.y, player_dir.x);
 
             struct Ray {
                 pos: Vector2<f64>,
@@ -150,7 +150,7 @@ fn main() {
                 let y_edge = Vector2::new(1.0, ray.dir.y/ray.dir.x) * facing.x; // <- the muliplying by just the x and the y works is
                 let x_edge = Vector2::new(ray.dir.x/ray.dir.y, 1.0) * facing.y; // because the negatives in the fraction !!! 
                 let step = x_edge;
-                let step = ray.dir * 0.5;
+                //let step = ray.dir * 0.5;
                 ray.pos += step;
 
 
