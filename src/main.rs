@@ -117,7 +117,7 @@ fn main() {
             if input.key_held(KeyCode::KeyD) { player_pos[0] += deltatime * 10.0; }
 
             // Calculate ray
-            let ray_dir: [f64; 2] = [(-player_pos[0]-mouse_pos[0]).sin(), (player_pos[1]-mouse_pos[0]).cos()];
+            let ray_dir: [f64; 2] = [mouse_pos[0]-player_pos[0], mouse_pos[1]-player_pos[1]];
             //let len = f64::sqrt(ray_dir[0]*ray_dir[0] + ray_dir[1]*ray_dir[1]);
             let ray_dir: [f64; 2] = [ray_dir[0] / 20.0, ray_dir[1] / 20.0];
             println!("{:?}", ray_dir);
