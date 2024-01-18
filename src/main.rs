@@ -119,8 +119,7 @@ fn main() {
             // Calculate ray
             let ray_dir: [f64; 2] = [(mouse_pos[0]/GRID_SIZE as f64)-player_pos[0], (mouse_pos[1]/GRID_SIZE as f64)-player_pos[1]];
             let len = f64::sqrt(ray_dir[0]*ray_dir[0] + ray_dir[1]*ray_dir[1]);
-            let ray_dir: [f64; 2] = [ray_dir[0] / len, ray_dir[1] / len];
-            println!("{:?}", ray_dir);
+            let ray_dir: [f64; 2] = [ray_dir[0] / len / 5.0, ray_dir[1] / len / 5.0];
 
             let mut ray_pos = player_pos;
             //hit_pos = [ray_pos[0] + ray_dir[0], ray_pos[1] + ray_dir[1]];
@@ -133,9 +132,8 @@ fn main() {
                 }
                 let map_x = ray_pos[0].floor() as usize;
                 let map_y = ray_pos[1].floor() as usize;
-                println!("{map_x:?} {map_y:?}");
-                println!("{:?} {:?}", player_pos[0], player_pos[1]);
                 if map[map_x + map_y * MAP_WIDTH] != 0 {
+                    println!("dist: {:?}", f64::sqrt((ray_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
                     hit_pos = [
                         map_x as f64,
                         map_y as f64,
