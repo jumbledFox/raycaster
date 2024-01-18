@@ -8,14 +8,19 @@ use winit::{
     dpi::{LogicalSize, PhysicalPosition},
 };
 use winit_input_helper::WinitInputHelper;
+
 use error_iter::ErrorIter as _;
 use log::{debug, error};
 use pixels::{Error, Pixels, SurfaceTexture};
 use pixels_primitives;
 
+extern crate nalgebra as na;
+use na::Vector2;
+
 const WIDTH : u32 = 576;
 const HEIGHT: u32 = 324;
 const GRID_SIZE: u32 = 12;
+const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this 
 
 const MAP_WIDTH : usize = 48;
 const MAP_HEIGHT: usize = 27;
@@ -72,12 +77,13 @@ fn main() {
     let mut deltatime: f64 = 0.0;
     let mut lasttime = Instant::now();
 
-    let mut player_pos: [f64; 2] = [0.0, 0.0];
-    let mut player_dir = [1.0, 0.0];
-    let mut cam_plane: [f64; 2] = [0.0, -1.0];
-    let mut mouse_pos: [f64; 2] = [0.0, 0.0];
-    let mut check_points: Vec<[f64; 2]> = Vec::with_capacity(10);
-    let mut hit_pos: Option<[f64; 2]> = None;
+    //let mut player_pos = Vector2::<f64>::new(0.0, 0.0);
+    let mut player_pos = Vector2::new(1.0, 1.0);
+    let mut player_dir = Vector2::new(1.0, 0.0);
+    let mut cam_plane  = Vector2::new(0.0, -1.0);
+    let mut mouse_pos  = Vector2::new(0.0, 0.0);
+    let mut check_points: Vec<Vector2<f64>> = Vec::with_capacity(10);
+    let mut hit_pos: Option<Vector2<f64>> = None;
 
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
@@ -109,58 +115,66 @@ fn main() {
 
             if let Some(p) = input.cursor() {
                 mouse_pos = match pixels.window_pos_to_pixel(p) {
-                    Ok(p_pos)  => [p_pos.0 as f64, p_pos.1 as f64],
-                    Err(p_pos) => [p_pos.0 as f64, p_pos.1 as f64],
+                    Ok(p_pos)  => Vector2::new(p_pos.0 as f64, p_pos.1 as f64),
+                    Err(p_pos) => Vector2::new(p_pos.0 as f64, p_pos.1 as f64),
                 };
             }
 
-            if input.key_held(KeyCode::KeyW) { player_pos[1] -= deltatime * 10.0; }
-            if input.key_held(KeyCode::KeyA) { player_pos[0] -= deltatime * 10.0; }
-            if input.key_held(KeyCode::KeyS) { player_pos[1] += deltatime * 10.0; }
-            if input.key_held(KeyCode::KeyD) { player_pos[0] += deltatime * 10.0; }
+            let mut mov = Vector2::new(0.0, 0.0);
+            if input.key_held(KeyCode::KeyW) { mov.y -= 1.0; }
+            if input.key_held(KeyCode::KeyA) { mov.x -= 1.0; }
+            if input.key_held(KeyCode::KeyS) { mov.y += 1.0; }
+            if input.key_held(KeyCode::KeyD) { mov.x += 1.0; }
+            if mov.magnitude() != 0.0 { player_pos += mov.normalize() * deltatime * 10.0; }
+            
             // if input.key_held(KeyCode::KeyW) {  player_pos[1] += deltatime * 10.0 * player_dir[1];
             //                                     player_pos[0] += deltatime * 10.0 * player_dir[0]; }
             // if input.key_held(KeyCode::KeyS) {  player_pos[1] -= deltatime * 10.0 * player_dir[1];
             //                                     player_pos[0] -= deltatime * 10.0 * player_dir[0]; }
             // if input.key_held(KeyCode::KeyA) {  player_pos[1] += deltatime * 10.0 * player_dir[0];
             //                                     player_pos[0] -= deltatime * 10.0 * player_dir[1]; }
-
+            
+            // ?? what is this comment lol
             // Player diretion = 
-            player_dir = [(mouse_pos[0]/GRID_SIZE as f64)-player_pos[0], (mouse_pos[1]/GRID_SIZE as f64)-player_pos[1]];
-            let len = f64::sqrt(player_dir[0].powi(2) + player_dir[1].powi(2));
-            //player_dir = [player_dir[0] / len / 5.0, player_dir[1] / len / 5.0];
-            player_dir = [player_dir[0] / len * 0.5, player_dir[1] / len * 0.5];
+            //player_dir = [(mouse_pos[0]/GRID_SIZE as f64)-player_pos[0], (mouse_pos[1]/GRID_SIZE as f64)-player_pos[1]];
+            player_dir = ((mouse_pos/GRID_SIZE as f64) - player_pos).normalize();
+            // let len = f64::sqrt(player_dir[0].powi(2) + player_dir[1].powi(2));
+            // //player_dir = [player_dir[0] / len / 5.0, player_dir[1] / len / 5.0];
+            // player_dir = [player_dir[0] / len * 0.5, player_dir[1] / len * 0.5];
 
-            cam_plane = [player_dir[1], -player_dir[0]];
+            //cam_plane = [player_dir[1], -player_dir[0]];
+            cam_plane = Vector2::new(player_dir.y, -player_dir.x);
 
-            // Calculate ray
-            let ray_dir: [f64; 2] = player_dir;
-            let mut ray_pos = player_pos;
-
+            struct Ray {
+                pos: Vector2<f64>,
+                dir: Vector2<f64>,
+            }
+            let mut ray = Ray { pos: player_pos, dir: player_dir };
+            
             check_points.clear();
             hit_pos = None;
             
-            // TODO: add vector library
             // TODO: do algorithm, make classes
             for i in 0..100 {
                 // Calculate how far the ray should move and move it.
-                let mov = [1.0, ray_dir[1]/ray_dir[0]];
-                let mov = [ray_dir[0]/ray_dir[1], 1.0];
-                ray_pos = [ray_pos[0] + mov[0], ray_pos[1] + mov[1]];
+                let mov = Vector2::new(1.0, ray.dir.y/ray.dir.x);
+                let mov = Vector2::new(ray.dir.x/ray.dir.y, 1.0);
+                ray.pos += mov;
+                //ray_pos = [ray_pos[0] + mov[0], ray_pos[1] + mov[1]];
                 //ray_pos = [ray_pos[0] + ray_dir[0], ray_pos[1] + ray_dir[1]];
                 //ray_pos = [ray_pos[0] + ray_dir[0], ray_pos[1] + ray_dir[1]];
 
 
-                check_points.push(ray_pos);
-                if ray_pos[0] < 0.0 || ray_pos[0].ceil() > MAP_WIDTH  as f64 || 
-                   ray_pos[1] < 0.0 || ray_pos[1].ceil() > MAP_HEIGHT as f64 {
+                check_points.push(ray.pos);
+                if  ray.pos.x < 0.0 || ray.pos.x.ceil() > MAP_WIDTH  as f64 || 
+                    ray.pos.y < 0.0 || ray.pos.y.ceil() > MAP_HEIGHT as f64 {
                     continue;
                 }
-                let map_x = ray_pos[0].floor() as usize;
-                let map_y = ray_pos[1].floor() as usize;
+                let map_x = ray.pos.x.floor() as usize;
+                let map_y = ray.pos.y.floor() as usize;
                 if map[map_x + map_y * MAP_WIDTH] != 0 {
-                    println!("dist: {:?}", f64::sqrt((ray_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
-                    hit_pos = Some(ray_pos);
+                    //println!("dist: {:?}", f64::sqrt((ray_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
+                    hit_pos = Some(ray.pos);
                     break;
                 }
             }
@@ -178,7 +192,8 @@ fn log_error<E: std::error::Error + 'static>(method_name: &str, err: E, control_
     control_flow.exit();
 }
 
-fn draw(screen: &mut [u8], player_pos: &[f64; 2], player_dir: &[f64; 2], cam_plane: &[f64; 2], mouse_pos: &[f64; 2], hit_pos: &Option<[f64; 2]>, check_points: &Vec<[f64; 2]>) {
+fn draw(screen: &mut [u8], player_pos: &Vector2<f64>, player_dir: &Vector2<f64>, cam_plane: &Vector2<f64>,
+    mouse_pos: &Vector2<f64>, hit_pos: &Option<Vector2<f64>>, check_points: &Vec<Vector2<f64>>) {
     // Clear screen
     screen.copy_from_slice(&[0x00, 0x00, 0x00, 0xFF].repeat(screen.len()/4));
 
@@ -200,7 +215,7 @@ fn draw(screen: &mut [u8], player_pos: &[f64; 2], player_dir: &[f64; 2], cam_pla
         if *m == 0 { continue; }
         let x = i % MAP_WIDTH;
         let y = i / MAP_WIDTH;
-        draw_rect(screen, WIDTH as usize,
+        draw_rect(screen,
             x*GRID_SIZE as usize,                      y*GRID_SIZE as usize,
             x*GRID_SIZE as usize + GRID_SIZE as usize, y*GRID_SIZE as usize + GRID_SIZE as usize,
             &col);
@@ -215,47 +230,49 @@ fn draw(screen: &mut [u8], player_pos: &[f64; 2], player_dir: &[f64; 2], cam_pla
         let x = i % MAP_WIDTH;
         let y = i / MAP_WIDTH % MAP_HEIGHT;
     }
-    let GRID_SIZE_F64 = GRID_SIZE as f64;
-
     // Draw ray
     if let Some(hit_pos) = hit_pos {
         // Draw hit point
         pixels_primitives::circle(screen, WIDTH as i32,
-            hit_pos[0] * GRID_SIZE_F64, hit_pos[1] * GRID_SIZE_F64, 5.0, 1.0, &[0xAA, 0xAA, 0xAA, 0xFF]);
+            hit_pos.x * GRID_SIZE_F64, hit_pos.y * GRID_SIZE_F64, 5.0, 1.0, &[0xAA, 0xAA, 0xAA, 0xFF]);
         // Draw line
-        pixels_primitives::line(screen, WIDTH as i32,
-            hit_pos[0] * GRID_SIZE_F64, hit_pos[1] * GRID_SIZE_F64,
-            player_pos[0] * GRID_SIZE_F64, player_pos[1] * GRID_SIZE_F64,
+        draw_line(screen,
+            hit_pos * GRID_SIZE_F64, player_pos * GRID_SIZE_F64,
             &[0x77, 0x77, 0x77, 0xFF]);
     }
     for c in check_points {
         pixels_primitives::circle_filled(screen, WIDTH as i32,
-            c[0] * GRID_SIZE_F64, c[1] * GRID_SIZE_F64, 2.0, &[0x92, 0x92, 0x92, 0xFF]);
+            c.x * GRID_SIZE_F64, c.y * GRID_SIZE_F64, 2.0, &[0x92, 0x92, 0x92, 0xFF]);
     }
 
     // Draw player
     pixels_primitives::circle(screen, WIDTH as i32,
-        player_pos[0] * GRID_SIZE_F64, player_pos[1] * GRID_SIZE_F64, 5.0, 1.0, &[0x00, 0xFF, 0x00, 0xFF]);
+        player_pos.x * GRID_SIZE_F64, player_pos.y * GRID_SIZE_F64, 5.0, 1.0, &[0x00, 0xFF, 0x00, 0xFF]);
     // Draw mouse
     pixels_primitives::circle(screen, WIDTH as i32,
-        mouse_pos[0], mouse_pos[1], 5.0, 1.0, &[0xFF, 0x00, 0x00, 0xFF]);
+        mouse_pos.x, mouse_pos.y, 5.0, 1.0, &[0xFF, 0x00, 0x00, 0xFF]);
     // Draw direction and cam plane
-    // pixels_primitives::line(screen, WIDTH as i32,
-    //     player_pos[0] * GRID_SIZE_F64, player_pos[1] * GRID_SIZE_F64, 
-    //     (player_pos[0] + player_dir[0]) * GRID_SIZE_F64, (player_pos[1] + player_dir[1]) * GRID_SIZE_F64,
-    //     &[0xFF, 0x00, 0xFF, 0xFF]);
-    // pixels_primitives::line(screen, WIDTH as i32,
-    //     (player_pos[0] + player_dir[0] - cam_plane[0]) * GRID_SIZE_F64,(player_pos[1] + player_dir[1] - cam_plane[1]) * GRID_SIZE_F64, 
-    //     (player_pos[0] + player_dir[0] + cam_plane[0]) * GRID_SIZE_F64,(player_pos[1] + player_dir[1] + cam_plane[1]) * GRID_SIZE_F64, 
-    //     &[0x00, 0xFF, 0xFF, 0xFF]);
-    // pixels_primitives::line(screen, WIDTH as i32,
-    //     player_pos[0] * GRID_SIZE as f64, player_pos[1] * GRID_SIZE as f64,
-    //     mouse_pos[0], mouse_pos[1],
-    //     &[0x77, 0x77, 0x77, 0xFF]);
+    draw_line(screen,
+        player_pos * GRID_SIZE_F64,
+        (player_pos + player_dir) * GRID_SIZE_F64,
+        &[0xFF, 0x00, 0xFF, 0xFF]);
+    draw_line(screen,
+        (player_pos + player_dir - cam_plane) * GRID_SIZE_F64,
+        (player_pos + player_dir + cam_plane) * GRID_SIZE_F64,
+        &[0x00, 0xFF, 0xFF, 0xFF]);
+    draw_line(screen,
+        player_pos * GRID_SIZE_F64, *mouse_pos,
+        &[0x77, 0x00, 0x00, 0xFF]);
 }
 
-fn draw_rect(screen: &mut [u8], width: usize, x_0: usize, y_0: usize, x_1: usize, y_1: usize, col: &[u8; 4]) {
+// A neater way of invoking pixels_primitves functions
+fn draw_line(screen: &mut [u8], pos_a: Vector2<f64>, pos_b: Vector2<f64>, col: &[u8; 4]) {
+    pixels_primitives::line(screen, WIDTH as i32, pos_a.x, pos_a.y, pos_b.x, pos_b.y, col);
+}
+
+// My own draw_rect function, doesn't do bounds checking but like,, just don't be stupid?? 
+fn draw_rect(screen: &mut [u8], x_0: usize, y_0: usize, x_1: usize, y_1: usize, col: &[u8; 4]) {
     for y in y_0..y_1 {
-        screen[(x_0+(y)*width) * 4..(x_1+(y)*width) * 4].copy_from_slice(&col.repeat(x_1-x_0));
+        screen[(x_0+(y)*WIDTH as usize) * 4..(x_1+(y)*WIDTH as usize) * 4].copy_from_slice(&col.repeat(x_1-x_0));
     }
 }

@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 error-iter = "0.4.1"
 log = "0.4.20"
+nalgebra = "0.32.3"
 pixels = "0.13.0"
 pixels_primitives = "0.1.1"
 winit = {version = "0.29.10", features = ["rwh_05"]}
@@ -15,10 +16,11 @@ winit_input_helper = "0.15.2"
 # winit = "0.28"
 # winit_input_helper = "0.14"
 
-# Enable max optimizations for dependencies, but not for our code:
-[profile.dev.package."*"]
-opt-level = 3
+# # Lol i disabled these for the time being
+# # Enable max optimizations for dependencies, but not for our code:
+# [profile.dev.package."*"]
+# opt-level = 3
 
-# Enable only a small amount of optimization in debug mode
-[profile.dev]
-opt-level = 1
+# # Enable only a small amount of optimization in debug mode
+# [profile.dev]
+# opt-level = 1
