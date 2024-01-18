@@ -73,8 +73,10 @@ fn main() {
     let mut lasttime = Instant::now();
 
     let mut player_pos: [f64; 2] = [0.0, 0.0];
+    let mut player_dir = [1.0, 0.0];
+    //let mut cam_plane: [f64; 2] = [0.0, -1.0];
     let mut mouse_pos: [f64; 2] = [0.0, 0.0];
-    let mut hit_pos: [f64; 2] = [0.0, 0.0];
+    let mut hit_pos: Option<[f64; 2]> = None;
 
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
@@ -116,10 +118,12 @@ fn main() {
             if input.key_held(KeyCode::KeyS) { player_pos[1] += deltatime * 10.0; }
             if input.key_held(KeyCode::KeyD) { player_pos[0] += deltatime * 10.0; }
 
+            // Player diretion = 
+            player_dir = [(mouse_pos[0]/GRID_SIZE as f64)-player_pos[0], (mouse_pos[1]/GRID_SIZE as f64)-player_pos[1]];
+            let len = f64::sqrt(player_dir[0].powi(2) + player_dir[1].powi(2));
+            player_dir = [player_dir[0] / len / 5.0, player_dir[1] / len / 5.0];
             // Calculate ray
-            let ray_dir: [f64; 2] = [(mouse_pos[0]/GRID_SIZE as f64)-player_pos[0], (mouse_pos[1]/GRID_SIZE as f64)-player_pos[1]];
-            let len = f64::sqrt(ray_dir[0]*ray_dir[0] + ray_dir[1]*ray_dir[1]);
-            let ray_dir: [f64; 2] = [ray_dir[0] / len / 5.0, ray_dir[1] / len / 5.0];
+            let ray_dir: [f64; 2] = player_dir;
 
             let mut ray_pos = player_pos;
             //hit_pos = [ray_pos[0] + ray_dir[0], ray_pos[1] + ray_dir[1]];
@@ -127,18 +131,18 @@ fn main() {
                 ray_pos = [ray_pos[0] + ray_dir[0], ray_pos[1] + ray_dir[1]];
                 if ray_pos[0] < 0.0 || ray_pos[0].ceil() > MAP_WIDTH  as f64 || 
                    ray_pos[1] < 0.0 || ray_pos[1].ceil() > MAP_HEIGHT as f64 {
-                    hit_pos = [0.0, 0.0];
+                    hit_pos = None;
                     break;
                 }
                 let map_x = ray_pos[0].floor() as usize;
                 let map_y = ray_pos[1].floor() as usize;
                 if map[map_x + map_y * MAP_WIDTH] != 0 {
                     println!("dist: {:?}", f64::sqrt((ray_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
-                    hit_pos = [
-                        map_x as f64,
-                        map_y as f64,
-                    ];
-                    hit_pos = ray_pos;
+                    // hit_pos = [
+                    //     map_x as f64,
+                    //     map_y as f64,
+                    // ];
+                    hit_pos = Some(ray_pos);
                     break;
                 }
             }
@@ -156,7 +160,7 @@ fn log_error<E: std::error::Error + 'static>(method_name: &str, err: E, control_
     control_flow.exit();
 }
 
-fn draw(screen: &mut [u8], player_pos: &[f64; 2], mouse_pos: &[f64; 2], hit_pos: &[f64; 2]) {
+fn draw(screen: &mut [u8], player_pos: &[f64; 2], mouse_pos: &[f64; 2], hit_pos: &Option<[f64; 2]>) {
     // Clear screen
     screen.copy_from_slice(&[0x00, 0x00, 0x00, 0xFF].repeat(screen.len()/4));
 
@@ -204,14 +208,17 @@ fn draw(screen: &mut [u8], player_pos: &[f64; 2], mouse_pos: &[f64; 2], hit_pos:
         player_pos[0] * GRID_SIZE as f64, player_pos[1] * GRID_SIZE as f64,
         mouse_pos[0], mouse_pos[1],
         &[0x77, 0x77, 0x77, 0xFF]);
-    // Draw hit point
-    pixels_primitives::circle(screen, WIDTH as i32,
-        hit_pos[0] * GRID_SIZE as f64, hit_pos[1] * GRID_SIZE as f64, 5.0, 1.0, &[0xAA, 0xAA, 0xAA, 0xFF]);
-    // Draw line
-    pixels_primitives::line(screen, WIDTH as i32,
-        hit_pos[0] * GRID_SIZE as f64, hit_pos[1] * GRID_SIZE as f64,
-        player_pos[0] * GRID_SIZE as f64, player_pos[1] * GRID_SIZE as f64,
-        &[0x77, 0x77, 0x77, 0xFF]);
+    if let Some(hit_pos) = hit_pos {
+        // Draw hit point
+        pixels_primitives::circle(screen, WIDTH as i32,
+            hit_pos[0] * GRID_SIZE as f64, hit_pos[1] * GRID_SIZE as f64, 5.0, 1.0, &[0xAA, 0xAA, 0xAA, 0xFF]);
+        // Draw line
+        pixels_primitives::line(screen, WIDTH as i32,
+            hit_pos[0] * GRID_SIZE as f64, hit_pos[1] * GRID_SIZE as f64,
+            player_pos[0] * GRID_SIZE as f64, player_pos[1] * GRID_SIZE as f64,
+            &[0x77, 0x77, 0x77, 0xFF]);
+    }
+
 }
 
 fn draw_rect(screen: &mut [u8], width: usize, x_0: usize, y_0: usize, x_1: usize, y_1: usize, col: &[u8; 4]) {
