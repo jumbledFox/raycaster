@@ -124,12 +124,15 @@ fn main() {
                 };
             }
 
+            if input.key_pressed_os(KeyCode::KeyQ) { player_pos = Vector2::new(5.0, 10.0); }
             let mut mov = Vector2::new(0.0, 0.0);
             if input.key_held(KeyCode::KeyW) { mov.y -= 1.0; }
             if input.key_held(KeyCode::KeyA) { mov.x -= 1.0; }
             if input.key_held(KeyCode::KeyS) { mov.y += 1.0; }
             if input.key_held(KeyCode::KeyD) { mov.x += 1.0; }
-            if mov.magnitude() != 0.0 { player_pos += mov.normalize() * deltatime * 10.0; }
+            if mov.magnitude() != 0.0 { mov = mov.normalize(); }
+            if input.key_held(KeyCode::ShiftLeft) { mov *= 1.8; }
+            player_pos += mov * deltatime * 10.0;
 
             // I'm keeping the comment below as a remnant of a simpler time: 
             // Player diretion = 
@@ -140,32 +143,84 @@ fn main() {
                 pos: Vector2<f64>,
                 dir: Vector2<f64>,
             }
-            let mut ray = Ray { pos: player_pos, dir: player_dir + (cam_plane * ray_sweep) };
-            let facing = Vector2::new(ray.dir.x.signum(), ray.dir.y.signum());
+            let mut ray = Ray { pos: player_pos, dir: player_dir /*+ (cam_plane * ray_sweep)*/ };
             check_points.clear();
             hit_pos = None;
+
             // TODO: do algorithm, make classes
-            for i in 0..100 {
-                // Calculate how far the ray should move and move it.
-                let y_edge = Vector2::new(1.0, ray.dir.y/ray.dir.x) * facing.x; // <- the muliplying by just the x and the y works is
-                let x_edge = Vector2::new(ray.dir.x/ray.dir.y, 1.0) * facing.y; // because the negatives in the fraction !!! 
-                let step = x_edge;
-                //let step = ray.dir * 0.5;
-                ray.pos += step;
+            // DDA algorithm
+            // Which box of the map we're in
+            let mut map_pos: Vector2<usize> = Vector2::new(
+                ray.pos.x as usize,
+                ray.pos.y as usize);
+            let mut ray_length_1d = Vector2::new(0.0, 0.0);
 
+            // The length of the ray from the current position to next x or y side
+            let mut side_dist = Vector2::new(0.0, 0.0);
+            
+            let mut step: Vector2<isize> = Vector2::new(0, 0);
+            // Length of the ray from one x or y side to the next
+            let step_size = Vector2::new(
+                f64::sqrt(1.0 + (ray.dir.y / ray.dir.x).powi(2)),
+                f64::sqrt(1.0 + (ray.dir.x / ray.dir.y).powi(2)),
+            );
 
-                check_points.push(ray.pos);
-                if  ray.pos.x < 0.0 || ray.pos.x.ceil() > MAP_WIDTH  as f64 || 
-                    ray.pos.y < 0.0 || ray.pos.y.ceil() > MAP_HEIGHT as f64 {
-                    continue;
+            if ray.dir.x < 0.0 {
+                step.x = -1;
+                ray_length_1d.x = (ray.pos.x - map_pos.x as f64) * step_size.x;
+            } else {
+                step.x =  1;
+                ray_length_1d.x = ((map_pos.x + 1) as f64 - ray.pos.x) * step_size.x;
+            }
+            if ray.dir.y < 0.0 {
+                step.y = -1;
+                ray_length_1d.y = (ray.pos.y - map_pos.y as f64) * step_size.y;
+            } else {
+                step.y =  1;
+                ray_length_1d.y = ((map_pos.y + 1) as f64 - ray.pos.y) * step_size.y;
+            }
+
+            let mut distance: f64 = 0.0;
+
+            let mut tile_found = false;
+            let mut out_of_bounds = false;
+            while !tile_found || distance > 50.0 {
+                if ray_length_1d.x < ray_length_1d.y {
+                    if let Some(m) = map_pos.x.checked_add_signed(step.x) {
+                        map_pos.x = m;
+                    } else {
+                        break;
+                    }
+                    distance += ray_length_1d.x;
+                    ray_length_1d.x += step_size.x;
+                } else {
+                    if let Some(m) = map_pos.y.checked_add_signed(step.y) {
+                        map_pos.y = m;
+                    } else {
+                        break;
+                    }
+                    distance += ray_length_1d.y;
+                    ray_length_1d.y += step_size.y;
                 }
-                let map_x = ray.pos.x.floor() as usize;
-                let map_y = ray.pos.y.floor() as usize;
-                if map[map_x + map_y * MAP_WIDTH] != 0 {
+                // if  ray.pos.x < 0.0 || ray.pos.x.ceil() > MAP_WIDTH  as f64 || 
+                //     ray.pos.y < 0.0 || ray.pos.y.ceil() > MAP_HEIGHT as f64 {
+                //     continue;
+                // }
+                check_points.push(Vector2::new(map_pos.x as f64, map_pos.y as f64));
+                // let map_x = ray.pos.x.floor() as usize;
+                // let map_y = ray.pos.y.floor() as usize;
+                if map[map_pos.x + map_pos.y * MAP_WIDTH] != 0 {
                     //println!("dist: {:?}", f64::sqrt((ray_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
                     hit_pos = Some(ray.pos);
+                    tile_found = true;
                     break;
                 }
+            }
+            
+            hit_pos = None;
+            if tile_found {
+                hit_pos = Some(ray.pos + (ray.dir * distance));
+                println!("{:?}, {distance:?}", hit_pos.unwrap());
             }
 
             window.request_redraw();
