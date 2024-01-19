@@ -17,6 +17,11 @@ use pixels_primitives;
 extern crate nalgebra as na;
 use na::Vector2;
 
+use rand::Rng;
+
+pub mod renderer;
+pub mod game;
+
 const WIDTH : u32 = 576;
 const HEIGHT: u32 = 324;
 const GRID_SIZE: u32 = 12;
@@ -85,13 +90,14 @@ fn main() {
     let mut mouse_pos  = Vector2::new(0.0, 0.0);
     let mut check_points: Vec<Vector2<f64>> = Vec::with_capacity(10);
     let mut hit_pos: Option<Vector2<f64>> = None;
+    let mut hit_tile: Option<Vector2<usize>> = None;
 
     let mut ray_sweep = -1.0;
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
             match event {
                 WindowEvent::RedrawRequested => {
-                    draw(pixels.frame_mut(), &player_pos, &player_dir, &cam_plane, &mouse_pos, &hit_pos, &check_points);
+                    draw(pixels.frame_mut(), &player_pos, &player_dir, &cam_plane, &mouse_pos, &hit_pos, &hit_tile, &check_points);
                     if let Err(err) = pixels.render() {
                         return log_error("pixels.render", err, &control_flow);
                     }
@@ -144,42 +150,40 @@ fn main() {
             hit_pos = None;
 
             // for w in 0..WIDTH {
-                struct Ray {
-                    pos: Vector2<f64>,
-                    dir: Vector2<f64>,
-                }
-                // let mut ray = Ray { pos: player_pos, dir: (player_dir + (cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0))).normalize()  };
-                let ray = Ray { pos: player_pos, dir: (player_dir + (cam_plane * ray_sweep)).normalize()  };
                 check_points.clear();
-    
-                // TODO: make classes
+
                 // DDA algorithm
+                let ray_start = player_pos;
+                let ray_dir = (player_dir + (cam_plane * 0.0)).normalize();
+
                 // Which box of the map we're in
                 let mut map_pos: Vector2<usize> = Vector2::new(
-                    ray.pos.x as usize,
-                    ray.pos.y as usize);
+                    ray_start.x as usize,
+                    ray_start.y as usize);
+                // Accumulated columns and rows of the length of the ray, used to compare.
                 let mut ray_length_1d = Vector2::new(0.0, 0.0);
-    
+                // 1 or -1
                 let mut step: Vector2<isize> = Vector2::new(0, 0);
-                // Length of the ray from one x or y side to the next
+                // Length of side in triangle formed by ray if the other side is length 1 (from one cell to the next)
                 let step_size = Vector2::new(
-                    f64::sqrt(1.0 + (ray.dir.y / ray.dir.x) * (ray.dir.y / ray.dir.x)),
-                    f64::sqrt(1.0 + (ray.dir.x / ray.dir.y) * (ray.dir.x / ray.dir.y)),
+                    f64::sqrt(1.0 + (ray_dir.y / ray_dir.x) * (ray_dir.y / ray_dir.x)),
+                    f64::sqrt(1.0 + (ray_dir.x / ray_dir.y) * (ray_dir.x / ray_dir.y)),
                 );
-    
-                if ray.dir.x < 0.0 {
+                
+                // Set step and calculate from position to first intersection point
+                if ray_dir.x < 0.0 {
                     step.x = -1;
-                    ray_length_1d.x = (ray.pos.x - map_pos.x as f64) * step_size.x;
+                    ray_length_1d.x = (ray_start.x - map_pos.x as f64) * step_size.x;
                 } else {
                     step.x =  1;
-                    ray_length_1d.x = ((map_pos.x + 1) as f64 - ray.pos.x) * step_size.x;
+                    ray_length_1d.x = ((map_pos.x + 1) as f64 - ray_start.x) * step_size.x;
                 }
-                if ray.dir.y < 0.0 {
+                if ray_dir.y < 0.0 {
                     step.y = -1;
-                    ray_length_1d.y = (ray.pos.y - map_pos.y as f64) * step_size.y;
+                    ray_length_1d.y = (ray_start.y - map_pos.y as f64) * step_size.y;
                 } else {
                     step.y =  1;
-                    ray_length_1d.y = ((map_pos.y + 1) as f64 - ray.pos.y) * step_size.y;
+                    ray_length_1d.y = ((map_pos.y + 1) as f64 - ray_start.y) * step_size.y;
                 }
     
                 let mut distance: f64 = 0.0;
@@ -208,7 +212,7 @@ fn main() {
                     //     ray.pos.y < 0.0 || ray.pos.y.ceil() > MAP_HEIGHT as f64 {
                     //     continue;
                     // }
-                    check_points.push(ray.pos + (ray.dir * distance));
+                    check_points.push(ray_start + (ray_dir * distance));
                     // let map_x = ray.pos.x.floor() as usize;
                     // let map_y = ray.pos.y.floor() as (Hello) usize;
                     // TODO: bounds checking and tidy up
@@ -219,13 +223,13 @@ fn main() {
                         //println!("dist: {:?}", f64::sqrt((ray_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
                         //hit_pos = Some(ray.pos);
                         tile_found = true;
-                        break;
                     }
                 }
                 
                 //hit_pos = None;
                 if tile_found {
-                    hit_pos = Some(ray.pos + (ray.dir * distance));
+                    hit_tile = Some(map_pos);
+                    hit_pos = Some(ray_start + (ray_dir * distance));
                 }
             // }
             
@@ -244,7 +248,7 @@ fn log_error<E: std::error::Error + 'static>(method_name: &str, err: E, control_
 }
 
 fn draw(screen: &mut [u8], player_pos: &Vector2<f64>, player_dir: &Vector2<f64>, cam_plane: &Vector2<f64>,
-    mouse_pos: &Vector2<f64>, hit_pos: &Option<Vector2<f64>>, check_points: &Vec<Vector2<f64>>) {
+    mouse_pos: &Vector2<f64>, hit_pos: &Option<Vector2<f64>>, hit_tile: &Option<Vector2<usize>>, check_points: &Vec<Vector2<f64>>) {
     // Clear screen
     screen.copy_from_slice(&[0x00, 0x00, 0x00, 0xFF].repeat(screen.len()/4));
 
@@ -265,6 +269,11 @@ fn draw(screen: &mut [u8], player_pos: &Vector2<f64>, player_dir: &Vector2<f64>,
         if *m == 0 { continue; }
         let x = i % MAP_WIDTH;
         let y = i / MAP_WIDTH;
+        if let Some(hit_t) = hit_tile {
+            if !(x == hit_t.x && y == hit_t.y) {continue;}
+        } else {
+            continue;
+        }
         draw_rect(screen,
             x*GRID_SIZE as usize,                      y*GRID_SIZE as usize,
             x*GRID_SIZE as usize + GRID_SIZE as usize, y*GRID_SIZE as usize + GRID_SIZE as usize,
