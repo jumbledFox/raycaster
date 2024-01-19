@@ -1,4 +1,4 @@
-use std::{time::Instant, ops::{Div, Mul}};
+use std::time::Instant;
 
 use winit::{
     event::{Event, WindowEvent},
@@ -25,33 +25,33 @@ const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this
 const MAP_WIDTH : usize = 48;
 const MAP_HEIGHT: usize = 27;
 static map: [usize; MAP_WIDTH*MAP_HEIGHT] = [
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,
-    1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,0,1,0,1,1,1,0,0,0,0,0,0,0,1,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,
-    1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,
+    7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,7,0,0,0,0,0,0,7,0,0,0,0,0,0,0,7,0,
+    7,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,7,0,7,0,7,7,7,0,0,0,0,0,0,0,7,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,7,0,7,7,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,3,0,0,0,0,0,0,5,5,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,4,5,6,7,8,0,0,0,0,3,0,0,0,0,0,0,5,0,0,5,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    7,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,
+    7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
 ];
 
 fn main() {
@@ -102,7 +102,7 @@ fn main() {
             deltatime = lasttime.elapsed().as_secs_f64();
             lasttime = Instant::now();
 
-            ray_sweep += deltatime;
+            ray_sweep += deltatime * 10.0;
             if ray_sweep > 1.0 { ray_sweep = -1.0; }
 
             // Exiting
@@ -139,89 +139,94 @@ fn main() {
             player_dir = ((mouse_pos/GRID_SIZE as f64) - player_pos).normalize();
             cam_plane = Vector2::new(-player_dir.y, player_dir.x);
 
-            struct Ray {
-                pos: Vector2<f64>,
-                dir: Vector2<f64>,
-            }
-            let mut ray = Ray { pos: player_pos, dir: player_dir /*+ (cam_plane * ray_sweep)*/ };
-            check_points.clear();
             hit_pos = None;
 
-            // TODO: do algorithm, make classes
-            // DDA algorithm
-            // Which box of the map we're in
-            let mut map_pos: Vector2<usize> = Vector2::new(
-                ray.pos.x as usize,
-                ray.pos.y as usize);
-            let mut ray_length_1d = Vector2::new(0.0, 0.0);
-
-            // The length of the ray from the current position to next x or y side
-            let mut side_dist = Vector2::new(0.0, 0.0);
-            
-            let mut step: Vector2<isize> = Vector2::new(0, 0);
-            // Length of the ray from one x or y side to the next
-            let step_size = Vector2::new(
-                f64::sqrt(1.0 + (ray.dir.y / ray.dir.x).powi(2)),
-                f64::sqrt(1.0 + (ray.dir.x / ray.dir.y).powi(2)),
-            );
-
-            if ray.dir.x < 0.0 {
-                step.x = -1;
-                ray_length_1d.x = (ray.pos.x - map_pos.x as f64) * step_size.x;
-            } else {
-                step.x =  1;
-                ray_length_1d.x = ((map_pos.x + 1) as f64 - ray.pos.x) * step_size.x;
-            }
-            if ray.dir.y < 0.0 {
-                step.y = -1;
-                ray_length_1d.y = (ray.pos.y - map_pos.y as f64) * step_size.y;
-            } else {
-                step.y =  1;
-                ray_length_1d.y = ((map_pos.y + 1) as f64 - ray.pos.y) * step_size.y;
-            }
-
-            let mut distance: f64 = 0.0;
-
-            let mut tile_found = false;
-            let mut out_of_bounds = false;
-            while !tile_found || distance > 50.0 {
-                if ray_length_1d.x < ray_length_1d.y {
-                    if let Some(m) = map_pos.x.checked_add_signed(step.x) {
-                        map_pos.x = m;
-                    } else {
-                        break;
-                    }
-                    distance += ray_length_1d.x;
-                    ray_length_1d.x += step_size.x;
+            // for w in 0..WIDTH {
+                struct Ray {
+                    pos: Vector2<f64>,
+                    dir: Vector2<f64>,
+                }
+                // let mut ray = Ray { pos: player_pos, dir: (player_dir + (cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0))).normalize()  };
+                let ray = Ray { pos: player_pos, dir: (player_dir + (cam_plane * 0.0)).normalize()  };
+                check_points.clear();
+    
+                // TODO: make classes
+                // DDA algorithm
+                // Which box of the map we're in
+                let mut map_pos: Vector2<usize> = Vector2::new(
+                    ray.pos.x as usize,
+                    ray.pos.y as usize);
+                let mut ray_length_1d = Vector2::new(0.0, 0.0);
+    
+                let mut step: Vector2<isize> = Vector2::new(0, 0);
+                // Length of the ray from one x or y side to the next
+                let step_size = Vector2::new(
+                    f64::sqrt(1.0 + (ray.dir.y / ray.dir.x) * (ray.dir.y / ray.dir.x)),
+                    f64::sqrt(1.0 + (ray.dir.x / ray.dir.y) * (ray.dir.x / ray.dir.y)),
+                );
+    
+                if ray.dir.x < 0.0 {
+                    step.x = -1;
+                    ray_length_1d.x = (ray.pos.x - map_pos.x as f64) * step_size.x;
                 } else {
-                    if let Some(m) = map_pos.y.checked_add_signed(step.y) {
-                        map_pos.y = m;
+                    step.x =  1;
+                    ray_length_1d.x = ((map_pos.x + 1) as f64 - ray.pos.x) * step_size.x;
+                }
+                if ray.dir.y < 0.0 {
+                    step.y = -1;
+                    ray_length_1d.y = (ray.pos.y - map_pos.y as f64) * step_size.y;
+                } else {
+                    step.y =  1;
+                    ray_length_1d.y = ((map_pos.y + 1) as f64 - ray.pos.y) * step_size.y;
+                }
+    
+                let mut distance: f64 = 0.0;
+    
+                let mut tile_found = false;
+                // let mut out_of_bounds = false;
+                while !tile_found && distance < 100.0 {
+                    if ray_length_1d.x < ray_length_1d.y {
+                        if let Some(m) = map_pos.x.checked_add_signed(step.x) {
+                            map_pos.x = m;
+                        } else {
+                            break;
+                        }
+                        distance = ray_length_1d.x;
+                        ray_length_1d.x += step_size.x;
                     } else {
+                        if let Some(m) = map_pos.y.checked_add_signed(step.y) {
+                            map_pos.y = m;
+                        } else {
+                            break;
+                        }
+                        distance = ray_length_1d.y;
+                        ray_length_1d.y += step_size.y;
+                    }
+                    // if  ray.pos.x < 0.0 || ray.pos.x.ceil() > MAP_WIDTH  as f64 || 
+                    //     ray.pos.y < 0.0 || ray.pos.y.ceil() > MAP_HEIGHT as f64 {
+                    //     continue;
+                    // }
+                    check_points.push(ray.pos + (ray.dir * distance));
+                    // let map_x = ray.pos.x.floor() as usize;
+                    // let map_y = ray.pos.y.floor() as (Hello) usize;
+                    // TODO: bounds checking and tidy up
+                    // if map_pos.x > MAP_WIDTH+1 || map_pos.y > MAP_HEIGHT+1 {
+                    //     continue;
+                    // }
+                    if map[map_pos.x + map_pos.y * MAP_WIDTH] != 0 {
+                        //println!("dist: {:?}", f64::sqrt((ray_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
+                        //hit_pos = Some(ray.pos);
+                        tile_found = true;
                         break;
                     }
-                    distance += ray_length_1d.y;
-                    ray_length_1d.y += step_size.y;
                 }
-                // if  ray.pos.x < 0.0 || ray.pos.x.ceil() > MAP_WIDTH  as f64 || 
-                //     ray.pos.y < 0.0 || ray.pos.y.ceil() > MAP_HEIGHT as f64 {
-                //     continue;
-                // }
-                check_points.push(Vector2::new(map_pos.x as f64, map_pos.y as f64));
-                // let map_x = ray.pos.x.floor() as usize;
-                // let map_y = ray.pos.y.floor() as usize;
-                if map[map_pos.x + map_pos.y * MAP_WIDTH] != 0 {
-                    //println!("dist: {:?}", f64::sqrt((ray_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
-                    hit_pos = Some(ray.pos);
-                    tile_found = true;
-                    break;
+                
+                //hit_pos = None;
+                if tile_found {
+                    hit_pos = Some(ray.pos + (ray.dir * distance));
                 }
-            }
+            // }
             
-            hit_pos = None;
-            if tile_found {
-                hit_pos = Some(ray.pos + (ray.dir * distance));
-                println!("{:?}, {distance:?}", hit_pos.unwrap());
-            }
 
             window.request_redraw();
         }
@@ -254,7 +259,6 @@ fn draw(screen: &mut [u8], player_pos: &Vector2<f64>, player_dir: &Vector2<f64>,
             &[0x22, 0x22, 0x22, 0xFF]);
     }
     // Draw map
-    let col: [u8; 4] = [0x00, 0x00, 0xFF, 0xFF];
     for (i, m) in map.iter().enumerate() {
         if *m == 0 { continue; }
         let x = i % MAP_WIDTH;
@@ -262,7 +266,7 @@ fn draw(screen: &mut [u8], player_pos: &Vector2<f64>, player_dir: &Vector2<f64>,
         draw_rect(screen,
             x*GRID_SIZE as usize,                      y*GRID_SIZE as usize,
             x*GRID_SIZE as usize + GRID_SIZE as usize, y*GRID_SIZE as usize + GRID_SIZE as usize,
-            &col);
+            &get_col(*m));
     }
     // Draw line from player to mouse
     draw_line(screen,
@@ -309,5 +313,18 @@ fn draw_line(screen: &mut [u8], pos_a: Vector2<f64>, pos_b: Vector2<f64>, col: &
 fn draw_rect(screen: &mut [u8], x_0: usize, y_0: usize, x_1: usize, y_1: usize, col: &[u8; 4]) {
     for y in y_0..y_1 {
         screen[(x_0+(y)*WIDTH as usize) * 4..(x_1+(y)*WIDTH as usize) * 4].copy_from_slice(&col.repeat(x_1-x_0));
+    }
+}
+
+fn get_col(c: usize) -> [u8;4] {
+    match c {
+        2 => [0xFF, 0x00, 0x00, 0xFF],
+        3 => [0xFF, 0xAA, 0x00, 0xFF],
+        4 => [0xFF, 0xFF, 0x00, 0xFF],
+        5 => [0x00, 0xFF, 0x00, 0xFF],
+        6 => [0x00, 0xFF, 0xFF, 0xFF],
+        7 => [0x00, 0x00, 0xFF, 0xFF],
+        8 => [0xFF, 0x00, 0xFF, 0xFF],
+        _ => [0xFF, 0xFF, 0xFF, 0xFF],
     }
 }
