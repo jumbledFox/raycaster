@@ -62,7 +62,8 @@ fn main() {
         let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
         let scaled_size = LogicalSize::new(WIDTH as f64 * 2.0, HEIGHT as f64 * 2.0);
         WindowBuilder::new()
-            .with_title("Raycasting :3")
+            // .with_title("Raycasting :3")
+            .with_title("Raycasting")
             .with_inner_size(scaled_size)
             .with_min_inner_size(size)
             .build(&event_loop)
@@ -102,7 +103,7 @@ fn main() {
             deltatime = lasttime.elapsed().as_secs_f64();
             lasttime = Instant::now();
 
-            ray_sweep += deltatime * 10.0;
+            ray_sweep += deltatime * 3.0;
             if ray_sweep > 1.0 { ray_sweep = -1.0; }
 
             // Exiting
@@ -148,7 +149,7 @@ fn main() {
                     dir: Vector2<f64>,
                 }
                 // let mut ray = Ray { pos: player_pos, dir: (player_dir + (cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0))).normalize()  };
-                let ray = Ray { pos: player_pos, dir: (player_dir + (cam_plane * 0.0)).normalize()  };
+                let ray = Ray { pos: player_pos, dir: (player_dir + (cam_plane * ray_sweep)).normalize()  };
                 check_points.clear();
     
                 // TODO: make classes
