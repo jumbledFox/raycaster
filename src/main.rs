@@ -124,7 +124,7 @@ fn main() {
                 };
             }
 
-            if input.key_pressed_os(KeyCode::KeyQ) { player_pos = Vector2::new(5.0, 10.0); }
+            if input.key_pressed_os(KeyCode::KeyQ) { player_pos = Vector2::new(34.0, 20.0); }
             let mut mov = Vector2::new(0.0, 0.0);
             if input.key_held(KeyCode::KeyW) { mov.y -= 1.0; }
             if input.key_held(KeyCode::KeyA) { mov.x -= 1.0; }
@@ -137,6 +137,7 @@ fn main() {
             // I'm keeping the comment below as a remnant of a simpler time: 
             // Player diretion = 
             player_dir = ((mouse_pos/GRID_SIZE as f64) - player_pos).normalize();
+            // player_dir = Vector2::new(1.0, 1.0).normalize(); // corner checking
             cam_plane = Vector2::new(-player_dir.y, player_dir.x);
 
             hit_pos = None;
