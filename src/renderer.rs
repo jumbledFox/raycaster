@@ -15,20 +15,15 @@ pub fn render_view(game: &Game, screen: &mut [u8]) {
     for w in 0..WIDTH {
         let raycast_result = util::raycast(&game, game.player.pos, game.player.dir + (cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0)), 100.0);
         if let Some((cell, distance)) = raycast_result {
-            //println!("{:?} {:?}", cell, distance);
-            // draw stripe
 
-            //Calculate height of line to draw on screen
-            // int lineHeight = (int)(h / perpWallDist);
+            let h = HEIGHT as f64;
+            let lineheight = h / distance;
+            let mut draw_start = -lineheight / 2.0 + h / 2.0;
+            if draw_start < 0.0 { draw_start = 0.0 };
+            let mut draw_end = lineheight / 2.0 + h / 2.0;
+            if draw_end >= h { draw_end= h - 1.0 };
 
-            // //calculate lowest and highest pixel to fill in current stripe
-            // int drawStart = -lineHeight / 2 + h / 2;
-            // if(drawStart < 0)drawStart = 0;
-            // int drawEnd = lineHeight / 2 + h / 2;
-            // if(drawEnd >= h)drawEnd = h - 1;
-
-            draw_line(screen, Vector2::new(w as f64, 0.0), Vector2::new(w as f64, 100.0 - distance * 3.0), &get_col(game.map[cell]));
-            //draw_line(screen, game.player.pos, (game.player.dir + (cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0))).normalize() * distance, &[0xFF, 0x00, 0x00, 0xFF]);
+            draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &get_col(game.map[cell]));
         }
     }
 }
