@@ -37,11 +37,11 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
                 util::RaycastSide::Y => hit_pos.x,
             }.rem_euclid(1.0);
             //if w != WIDTH / 2 {println!("{:?}", along)}
-            let tex = game.texture[(along * game.texture_size.0 as f64) as usize + game.texture_size.0];
+            let mut color = game.texture[(along * game.texture_size.0 as f64) as usize + game.texture_size.0*5];
             //println!("{:?}", along);
 
             // Color stuff
-            let mut color = get_col(game.map[cell]);
+            //let mut color = get_col(game.map[cell]);
             if side == util::RaycastSide::Y {
                 color[0] = (color[0] as f32 * 0.7) as u8;
                 color[1] = (color[1] as f32 * 0.7) as u8;
@@ -51,18 +51,22 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
             color[0] = (color[0] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
             color[1] = (color[1] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
             color[2] = (color[2] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
-            draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &tex);
+            draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
+            draw_slice(screen, w as usize, along, draw_start as usize, draw_end as usize);
         }
     }
     // }
 }
 
-pub fn render_map(game: &Game, screen: &mut [u8]) {
-
+// Draws a slice of a raycast
+fn draw_slice(screen: &mut [u8], w: usize, along: f64, draw_start: usize, draw_end: usize) {
+    for pix in screen[(w * WIDTH as usize + draw_start)..(w * WIDTH as usize + draw_end)].chunks_exact_mut(4) {
+        pix.copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
+    }
 }
 
 // Draws the map on to the screen
-fn draw_map(screen: &mut [u8], game: &Game) {
+pub fn render_map(screen: &mut [u8], game: &Game) {
 
 }
 
