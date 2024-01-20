@@ -14,7 +14,7 @@ pub fn render_view(game: &Game, screen: &mut [u8]) {
 
     for w in 0..WIDTH {
         let raycast_result = util::raycast(&game, game.player.pos, game.player.dir + (cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0)), 100.0);
-        if let Some((cell, distance)) = raycast_result {
+        if let Some((cell, distance, side)) = raycast_result {
 
             let h = HEIGHT as f64;
             let lineheight = h / distance;
@@ -23,7 +23,13 @@ pub fn render_view(game: &Game, screen: &mut [u8]) {
             let mut draw_end = lineheight / 2.0 + h / 2.0;
             if draw_end >= h { draw_end= h - 1.0 };
 
-            draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &get_col(game.map[cell]));
+            let mut color = get_col(game.map[cell]);
+            if side == util::RaycastSide::Y {
+                color[0] /= 2;
+                color[1] /= 2;
+                color[2] /= 2;
+            }
+            draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
         }
     }
 }

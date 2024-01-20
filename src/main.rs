@@ -101,7 +101,7 @@ fn main() {
             match event {
                 WindowEvent::RedrawRequested => {
                     renderer::render_view(&g, pixels.frame_mut());
-                    draw(pixels.frame_mut(), &player_pos, &player_dir, &cam_plane, &mouse_pos, &hit_pos, &check_points);
+                    //draw(pixels.frame_mut(), &player_pos, &player_dir, &cam_plane, &mouse_pos, &hit_pos, &check_points);
 
                     if let Err(err) = pixels.render() {
                         return log_error("pixels.render", err, &control_flow);

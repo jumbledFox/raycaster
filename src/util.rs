@@ -2,8 +2,11 @@ use nalgebra::Vector2;
 
 use crate::{WIDTH, game::Game};
 
-// Shoots a raycast from a position and a direction and returns what it hit (as an index in the map) and how far away it was
-pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64) -> Option<(usize, f64)> {
+#[derive(PartialEq)]
+pub enum RaycastSide { X, Y }
+
+// Shoots a raycast from a position and a direction and returns what it hit (as an index in the map), how far away it was, and if it hit x or y!
+pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64) -> Option<(usize, f64, RaycastSide)> {
     
     // // DDA algorithm
     // let ray_start = player_pos;
@@ -40,6 +43,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
     }
 
     let mut distance: f64 = 0.0;
+    let mut side = RaycastSide::X;
     
     let mut tile_found = false;
     // // let mut out_of_bounds = false;
@@ -49,10 +53,12 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             map_pos.x += step_x;
             distance = ray_length_1d.x;
             ray_length_1d.x += step_size.x;
+            side = RaycastSide::X;
         } else {
             map_pos.y += step_y;
             distance = ray_length_1d.y;
             ray_length_1d.y += step_size.y;
+            side = RaycastSide::Y;
         }
 
         if  start_pos.x < 0.0 || start_pos.x.ceil() >= game.map_width  as f64 || 
@@ -90,7 +96,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
     // //hit_pos = None;
     match tile_found {
         //true =>  Some(start_pos + (dir * distance)),
-        true =>  Some((map_pos.y as usize * game.map_width + map_pos.x as usize, distance)),
+        true =>  Some((map_pos.y as usize * game.map_width + map_pos.x as usize, distance, side)),
         false => None
     }
 }
