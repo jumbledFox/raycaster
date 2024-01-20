@@ -5,8 +5,9 @@ use crate::{WIDTH, game::Game};
 #[derive(PartialEq)]
 pub enum RaycastSide { X, Y }
 
-// Shoots a raycast from a position and a direction and returns what it hit (as an index in the map), how far away it was, and if it hit x or y!
-pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64) -> Option<(usize, f64, RaycastSide)> {
+// Shoots a raycast from a position and a direction and returns what it hit (as an index in the map),
+// the hit point, how far away it was, and if it hit x or y!
+pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64) -> Option<(usize, Vector2<f64>, f64, RaycastSide)> {
     // If the ray is out of bounds, don't bother.
     if  start_pos.x < 0.0 || start_pos.x > game.map_width  as f64 ||
         start_pos.y < 0.0 || start_pos.y > game.map_height as f64 {
@@ -83,28 +84,19 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
         //     continue;
         // }
 
-        // if  map_pos.x > game.map_width as isize || map_pos.y > game.map_height as isize ||
-        //     map_pos.x < 0 || map_pos.y < 0 {
-        //     continue;
-        // }
-        map_pos.x = map_pos.x.rem_euclid(game.map_width as isize);
-        map_pos.y = map_pos.y.rem_euclid(game.map_height as isize);
-        // if map[map_pos.x + map_pos.y * MAP_WIDTH] != 0 {
-        //     //println!("dist: {:?}", f64::sqrt((ray_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
-        //     //hit_pos = Some(ray.pos);
-        //     tile_found = true;
-        // }
+        if  map_pos.x > game.map_width as isize - 1 || map_pos.y > game.map_height as isize - 1 ||
+            map_pos.x < 0 || map_pos.y < 0 {
+            break;
+        }
+        // map_pos.x = map_pos.x.rem_euclid(game.map_width as isize);
+        // map_pos.y = map_pos.y.rem_euclid(game.map_height as isize);
+        // Maybe if i optimise this it'll be a lot faster
         let x_pos: Result<usize, _> = map_pos.x.try_into();
         let y_pos: Result<usize, _> = map_pos.y.try_into();
         if x_pos.is_err() || y_pos.is_err() { continue; }
         if let Some(tile) = game.map.get(x_pos.unwrap() + y_pos.unwrap() * game.map_width) {
             if *tile != 0 {tile_found = true};
         }
-        // if game.map[map_pos.x as usize + map_pos.y as usize * game.map_width] != 0 {
-        //     //println!("dist: {:?}", f64::sqrt((start_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
-        //     //hit_pos = Some(ray.pos);
-        //     tile_found = true;
-        // }
     }
     // For correcting bulge, instead of this method, which doesn't seem to work:
     // https://lodev.org/cgtutor/raycasting.html
@@ -112,7 +104,10 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
     // https://www.permadi.com/tutorial/raycast/rayc8.html
 
     match tile_found && distance < max_dist {
-        true =>  Some((map_pos.y as usize * game.map_width + map_pos.x as usize, distance*dir.angle(&game.player.dir).cos(), side)),
+        true =>  {
+            let perp_dist = distance*dir.angle(&game.player.dir).cos();
+            Some((map_pos.y as usize * game.map_width + map_pos.x as usize, start_pos + dir*perp_dist, perp_dist, side))
+        }
         false => None
     }
 }

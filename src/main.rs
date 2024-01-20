@@ -152,7 +152,7 @@ fn main() {
             // }
 
             if input.mouse_pressed(0) {
-                if let Some((cell, _, _)) = util::raycast(&g, g.player.pos, g.player.dir, 2.5) {
+                if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 2.5) {
                     g.map[cell] = 0;
                 }
             }
@@ -166,8 +166,8 @@ fn main() {
             if input.key_held(KeyCode::ControlLeft) { mov *= 0.5; }
             
             g.player.step(mov * 8.0, deltatime);
-            g.player.pos.x = g.player.pos.x.rem_euclid(g.map_width as f64);
-            g.player.pos.y = g.player.pos.y.rem_euclid(g.map_height as f64);
+            // g.player.pos.x = g.player.pos.x.rem_euclid(g.map_width as f64);
+            // g.player.pos.y = g.player.pos.y.rem_euclid(g.map_height as f64);
             // if let Some(c) = g.map.get_mut(g.player.pos.y as usize * g.map_width + g.player.pos.x as usize) {
             //     *c = 0;
             // }

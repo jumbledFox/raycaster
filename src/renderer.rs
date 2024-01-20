@@ -14,11 +14,14 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
     draw_rect(screen, 0, middle, WIDTH as usize, HEIGHT as usize,   &[ 51,  60,  87, 0xFF]);
 
     // TODO: make it so no-matter the aspect ratio, the map is always cubes
+    // for i in 0..100 {
     for w in 0..WIDTH {
+        //if w != WIDTH / 2 {continue;}
+
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
         let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 100.0);
-        if let Some((cell, distance, side)) = raycast_result {
-
+        if let Some((cell, hit_pos, distance, side)) = raycast_result {
+            // Calculating heights
             let head_bob = (game.player.head_bob_amount.sin() * 5.0) / (distance / 5.0);
             let h = HEIGHT as f64;
             let lineheight = (h / distance);// * (1.0/ASPECT_RATIO);
@@ -27,6 +30,17 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
             let mut draw_end = lineheight / 2.0 + h / 2.0 + head_bob - game.player.pitch;
             if draw_end > h { draw_end = h };
 
+            // Texture shiz
+            // How far along the texture is
+            let along = match side {
+                util::RaycastSide::X => hit_pos.y,
+                util::RaycastSide::Y => hit_pos.x,
+            }.rem_euclid(1.0);
+            //if w != WIDTH / 2 {println!("{:?}", along)}
+            let tex = game.texture[(along * game.texture_size.0 as f64) as usize + game.texture_size.0];
+            //println!("{:?}", along);
+
+            // Color stuff
             let mut color = get_col(game.map[cell]);
             if side == util::RaycastSide::Y {
                 color[0] = (color[0] as f32 * 0.7) as u8;
@@ -37,9 +51,10 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
             color[0] = (color[0] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
             color[1] = (color[1] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
             color[2] = (color[2] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
-            draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
+            draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &tex);
         }
     }
+    // }
 }
 
 pub fn render_map(game: &Game, screen: &mut [u8]) {
