@@ -16,7 +16,7 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
     // TODO: make it so no-matter the aspect ratio, the map is always cubes
     for w in 0..WIDTH {
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
-        let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 500.0);
+        let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 100.0);
         if let Some((cell, distance, side)) = raycast_result {
 
             let head_bob = (game.player.head_bob_amount.sin() * 5.0) / (distance / 5.0);
