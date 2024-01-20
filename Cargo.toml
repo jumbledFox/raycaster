@@ -1,5 +1,5 @@
 [package]
-name = "raycaster_beginnings"
+name = "raycaster"
 version = "0.1.0"
 edition = "2021"
 
