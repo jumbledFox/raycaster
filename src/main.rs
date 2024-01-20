@@ -1,5 +1,6 @@
 use std::time::Instant;
 
+use game::{Game, player::Player};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{EventLoop, ControlFlow, EventLoopWindowTarget},
@@ -20,6 +21,7 @@ use na::Vector2;
 use rand::Rng;
 
 pub mod renderer;
+pub mod util;
 pub mod game;
 
 const WIDTH : u32 = 576;
@@ -67,8 +69,7 @@ fn main() {
         let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
         let scaled_size = LogicalSize::new(WIDTH as f64 * 2.0, HEIGHT as f64 * 2.0);
         WindowBuilder::new()
-            // .with_title("Raycasting :3")
-            .with_title("Raycasting")
+            .with_title("Raycasting :3")
             .with_inner_size(scaled_size)
             .with_min_inner_size(size)
             .build(&event_loop)
@@ -90,14 +91,18 @@ fn main() {
     let mut mouse_pos  = Vector2::new(0.0, 0.0);
     let mut check_points: Vec<Vector2<f64>> = Vec::with_capacity(10);
     let mut hit_pos: Option<Vector2<f64>> = None;
-    let mut hit_tile: Option<Vector2<usize>> = None;
-
+    
     let mut ray_sweep = -1.0;
+
+    let mut g = Game::new();
+
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
             match event {
                 WindowEvent::RedrawRequested => {
-                    draw(pixels.frame_mut(), &player_pos, &player_dir, &cam_plane, &mouse_pos, &hit_pos, &hit_tile, &check_points);
+                    renderer::render_view(&g, pixels.frame_mut());
+                    draw(pixels.frame_mut(), &player_pos, &player_dir, &cam_plane, &mouse_pos, &hit_pos, &check_points);
+
                     if let Err(err) = pixels.render() {
                         return log_error("pixels.render", err, &control_flow);
                     }
@@ -140,10 +145,12 @@ fn main() {
             if mov.magnitude() != 0.0 { mov = mov.normalize(); }
             if input.key_held(KeyCode::ShiftLeft) { mov *= 1.8; }
             player_pos += mov * deltatime * 10.0;
+            g.player.pos += mov * deltatime * 10.0;
 
             // I'm keeping the comment below as a remnant of a simpler time: 
             // Player diretion = 
             player_dir = ((mouse_pos/GRID_SIZE as f64) - player_pos).normalize();
+            g.player.dir = player_dir;
             // player_dir = Vector2::new(1.0, 1.0).normalize(); // corner checking
             cam_plane = Vector2::new(-player_dir.y, player_dir.x);
 
@@ -157,9 +164,9 @@ fn main() {
                 let ray_dir = (player_dir + (cam_plane * 0.0)).normalize();
 
                 // Which box of the map we're in
-                let mut map_pos: Vector2<usize> = Vector2::new(
-                    ray_start.x as usize,
-                    ray_start.y as usize);
+                let mut map_pos: Vector2<isize> = Vector2::new(
+                    ray_start.x as isize,
+                    ray_start.y as isize);
                 // Accumulated columns and rows of the length of the ray, used to compare.
                 let mut ray_length_1d = Vector2::new(0.0, 0.0);
                 // 1 or -1
@@ -192,34 +199,27 @@ fn main() {
                 // let mut out_of_bounds = false;
                 while !tile_found && distance < 100.0 {
                     if ray_length_1d.x < ray_length_1d.y {
-                        if let Some(m) = map_pos.x.checked_add_signed(step.x) {
-                            map_pos.x = m;
-                        } else {
-                            break;
-                        }
+                        map_pos.x += step.x;
                         distance = ray_length_1d.x;
                         ray_length_1d.x += step_size.x;
                     } else {
-                        if let Some(m) = map_pos.y.checked_add_signed(step.y) {
-                            map_pos.y = m;
-                        } else {
-                            break;
-                        }
+                        map_pos.y += step.y;
                         distance = ray_length_1d.y;
                         ray_length_1d.y += step_size.y;
                     }
-                    // if  ray.pos.x < 0.0 || ray.pos.x.ceil() > MAP_WIDTH  as f64 || 
-                    //     ray.pos.y < 0.0 || ray.pos.y.ceil() > MAP_HEIGHT as f64 {
+                    // if  ray_pos.x < 0.0 || ray.pos.x.ceil() >= MAP_WIDTH  as f64 || 
+                    //     ray_pos.y < 0.0 || ray.pos.y.ceil() >= MAP_HEIGHT as f64 {
                     //     continue;
                     // }
                     check_points.push(ray_start + (ray_dir * distance));
                     // let map_x = ray.pos.x.floor() as usize;
                     // let map_y = ray.pos.y.floor() as (Hello) usize;
                     // TODO: bounds checking and tidy up
-                    // if map_pos.x > MAP_WIDTH+1 || map_pos.y > MAP_HEIGHT+1 {
-                    //     continue;
-                    // }
-                    if map[map_pos.x + map_pos.y * MAP_WIDTH] != 0 {
+                    if map_pos.x > MAP_WIDTH as isize - 1 || map_pos.y > MAP_HEIGHT as isize - 1 ||
+                        map_pos.x < 0 || map_pos.y < 0 {
+                        continue;
+                    }
+                    if map[map_pos.x as usize + map_pos.y as usize * MAP_WIDTH] != 0 {
                         //println!("dist: {:?}", f64::sqrt((ray_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
                         //hit_pos = Some(ray.pos);
                         tile_found = true;
@@ -228,7 +228,6 @@ fn main() {
                 
                 //hit_pos = None;
                 if tile_found {
-                    hit_tile = Some(map_pos);
                     hit_pos = Some(ray_start + (ray_dir * distance));
                 }
             // }
@@ -248,9 +247,9 @@ fn log_error<E: std::error::Error + 'static>(method_name: &str, err: E, control_
 }
 
 fn draw(screen: &mut [u8], player_pos: &Vector2<f64>, player_dir: &Vector2<f64>, cam_plane: &Vector2<f64>,
-    mouse_pos: &Vector2<f64>, hit_pos: &Option<Vector2<f64>>, hit_tile: &Option<Vector2<usize>>, check_points: &Vec<Vector2<f64>>) {
+    mouse_pos: &Vector2<f64>, hit_pos: &Option<Vector2<f64>>, check_points: &Vec<Vector2<f64>>) {
     // Clear screen
-    screen.copy_from_slice(&[0x00, 0x00, 0x00, 0xFF].repeat(screen.len()/4));
+    //screen.copy_from_slice(&[0x00, 0x00, 0x00, 0xFF].repeat(screen.len()/4));
 
     // Draw grid
     // This works for now, even though it's a little slow, so I turn a blind eye and pretend it's fast
@@ -269,11 +268,6 @@ fn draw(screen: &mut [u8], player_pos: &Vector2<f64>, player_dir: &Vector2<f64>,
         if *m == 0 { continue; }
         let x = i % MAP_WIDTH;
         let y = i / MAP_WIDTH;
-        if let Some(hit_t) = hit_tile {
-            if !(x == hit_t.x && y == hit_t.y) {continue;}
-        } else {
-            continue;
-        }
         draw_rect(screen,
             x*GRID_SIZE as usize,                      y*GRID_SIZE as usize,
             x*GRID_SIZE as usize + GRID_SIZE as usize, y*GRID_SIZE as usize + GRID_SIZE as usize,
