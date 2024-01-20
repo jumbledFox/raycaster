@@ -58,8 +58,11 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
     // }
 }
 
+// TODO:
 // Draws a slice of a raycast
 fn draw_slice(screen: &mut [u8], w: usize, along: f64, draw_start: usize, draw_end: usize) {
+    println!("{:?}", screen.len());
+
     for pix in screen[(w * WIDTH as usize + draw_start)..(w * WIDTH as usize + draw_end)].chunks_exact_mut(4) {
         pix.copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
     }
