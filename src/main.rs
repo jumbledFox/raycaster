@@ -1,12 +1,12 @@
-use std::time::Instant;
+use std::{time::Instant, f64::consts::PI};
 
 use game::{Game, player::Player};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{EventLoop, ControlFlow, EventLoopWindowTarget},
     keyboard::KeyCode,
-    window::WindowBuilder,
-    dpi::{LogicalSize, PhysicalPosition},
+    window::{WindowBuilder, WindowButtons},
+    dpi::{LogicalSize, PhysicalPosition, LogicalPosition}, platform::windows::WindowBuilderExtWindows,
 };
 use winit_input_helper::WinitInputHelper;
 
@@ -25,7 +25,8 @@ pub mod util;
 pub mod game;
 
 const WIDTH : u32 = 576;
-const HEIGHT: u32 = 324;
+const HEIGHT: u32 = WIDTH/2;//324;
+const ASPECT_RATIO: f64 = WIDTH as f64 / HEIGHT as f64;
 const GRID_SIZE: u32 = 12;
 const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this 
 
@@ -34,32 +35,35 @@ const MAP_HEIGHT: usize = 27;
 static map: [usize; MAP_WIDTH*MAP_HEIGHT] = [
     7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
     7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,
-    7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,7,0,0,0,0,0,0,7,0,0,0,0,0,0,0,7,0,
-    7,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,7,0,7,0,7,7,7,0,0,0,0,0,0,0,7,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,7,0,7,7,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,3,0,0,0,0,0,0,5,5,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,4,5,6,7,8,0,0,0,0,3,0,0,0,0,0,0,5,0,0,5,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    7,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,
-    7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,
+    7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,7,0,0,0,0,0,0,7,0,0,0,0,0,0,0,7,2,
+    7,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,7,0,7,0,7,7,7,0,0,0,0,0,0,0,7,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,7,0,7,7,0,0,0,0,0,0,7,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,3,0,0,0,0,0,0,5,5,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,4,5,6,7,8,0,0,0,0,3,0,0,0,0,0,0,5,0,0,5,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,
+    7,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,2,
+    7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,2,
     7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
 ];
+
+#[derive(Debug, PartialEq)]
+enum CursorMode {Free, Locked}
 
 fn main() {
     let event_loop = EventLoop::new().unwrap();
@@ -70,11 +74,14 @@ fn main() {
         let scaled_size = LogicalSize::new(WIDTH as f64 * 2.0, HEIGHT as f64 * 2.0);
         WindowBuilder::new()
             .with_title("Raycasting :3")
+            .with_title("Raycasting")
             .with_inner_size(scaled_size)
             .with_min_inner_size(size)
             .build(&event_loop)
             .unwrap()
     };
+    let mut cursor_mode = CursorMode::Free;
+
     let mut pixels = {
         let window_size = window.inner_size();
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
@@ -84,23 +91,13 @@ fn main() {
     let mut deltatime: f64 = 0.0;
     let mut lasttime = Instant::now();
 
-    //let mut player_pos = Vector2::<f64>::new(0.0, 0.0);
-    let mut player_pos = Vector2::new(1.0, 1.0);
-    let mut player_dir = Vector2::new(1.0, 0.0);
-    let mut cam_plane  = Vector2::new(0.0, -1.0);
-    let mut mouse_pos  = Vector2::new(0.0, 0.0);
-    let mut check_points: Vec<Vector2<f64>> = Vec::with_capacity(10);
-    let mut hit_pos: Option<Vector2<f64>> = None;
-    
-    let mut ray_sweep = -1.0;
-
     let mut g = Game::new();
 
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
             match event {
                 WindowEvent::RedrawRequested => {
-                    renderer::render_view(&g, pixels.frame_mut());
+                    renderer::render_view(&mut g, pixels.frame_mut());
                     //draw(pixels.frame_mut(), &player_pos, &player_dir, &cam_plane, &mouse_pos, &hit_pos, &check_points);
 
                     if let Err(err) = pixels.render() {
@@ -114,9 +111,6 @@ fn main() {
             deltatime = lasttime.elapsed().as_secs_f64();
             lasttime = Instant::now();
 
-            ray_sweep += deltatime * 3.0;
-            if ray_sweep > 1.0 { ray_sweep = -1.0; }
-
             // Exiting
             if input.key_pressed(KeyCode::Escape) || input.close_requested() {
                 control_flow.exit();
@@ -128,111 +122,66 @@ fn main() {
                     return log_error("pixels.render", err, &control_flow);
                 }
             }
+            if !window.has_focus() {
+                window.set_cursor_grab(winit::window::CursorGrabMode::None);
+                window.set_cursor_visible(true);
+                cursor_mode = CursorMode::Free;
+            }
+            if input.key_pressed(KeyCode::KeyQ) {
+                cursor_mode = match cursor_mode {
+                    CursorMode::Free   => {
+                        window.set_cursor_grab(winit::window::CursorGrabMode::Confined);
+                        window.set_cursor_visible(false);
+                        CursorMode::Locked
+                    }
+                    CursorMode::Locked => {
+                        window.set_cursor_grab(winit::window::CursorGrabMode::None);
+                        window.set_cursor_visible(true);
+                        CursorMode::Free
+                    }
+                }
+            }
+            if cursor_mode == CursorMode::Locked {
+                window.set_cursor_position(LogicalPosition::new(window.inner_size().width/2, window.inner_size().height/2));
+            }
+            // if let Some(p) = input.cursor() {
+            //     mouse_pos = match pixels.window_pos_to_pixel(p) {
+            //         Ok(p_pos)  => Vector2::new(p_pos.0 as f64, p_pos.1 as f64),
+            //         Err(p_pos) => Vector2::new(p_pos.0 as f64, p_pos.1 as f64),
+            //     };
+            // }
 
-            if let Some(p) = input.cursor() {
-                mouse_pos = match pixels.window_pos_to_pixel(p) {
-                    Ok(p_pos)  => Vector2::new(p_pos.0 as f64, p_pos.1 as f64),
-                    Err(p_pos) => Vector2::new(p_pos.0 as f64, p_pos.1 as f64),
-                };
+            if input.mouse_pressed(0) {
+                if let Some((cell, _, _)) = util::raycast(&g, g.player.pos, g.player.dir, 2.5) {
+                    g.map[cell] = 0;
+                }
             }
 
-            if input.key_pressed_os(KeyCode::KeyQ) { player_pos = Vector2::new(34.0, 20.0); }
             let mut mov = Vector2::new(0.0, 0.0);
-            if input.key_held(KeyCode::KeyW) { mov.y -= 1.0; }
+            if input.key_held(KeyCode::KeyW) { mov.y += 1.0; }
             if input.key_held(KeyCode::KeyA) { mov.x -= 1.0; }
-            if input.key_held(KeyCode::KeyS) { mov.y += 1.0; }
+            if input.key_held(KeyCode::KeyS) { mov.y -= 1.0; }
             if input.key_held(KeyCode::KeyD) { mov.x += 1.0; }
             if mov.magnitude() != 0.0 { mov = mov.normalize(); }
-            if input.key_held(KeyCode::ShiftLeft) { mov *= 1.8; }
-            player_pos += mov * deltatime * 10.0;
-            g.player.pos += mov * deltatime * 10.0;
-
-            // I'm keeping the comment below as a remnant of a simpler time: 
-            // Player diretion = 
-            player_dir = ((mouse_pos/GRID_SIZE as f64) - player_pos).normalize();
-            g.player.dir = player_dir;
-            // player_dir = Vector2::new(1.0, 1.0).normalize(); // corner checking
-            cam_plane = Vector2::new(-player_dir.y, player_dir.x);
-
-            hit_pos = None;
-
-            // for w in 0..WIDTH {
-                check_points.clear();
-
-                // DDA algorithm
-                let ray_start = player_pos;
-                let ray_dir = (player_dir + (cam_plane * 0.0)).normalize();
-
-                // Which box of the map we're in
-                let mut map_pos: Vector2<isize> = Vector2::new(
-                    ray_start.x as isize,
-                    ray_start.y as isize);
-                // Accumulated columns and rows of the length of the ray, used to compare.
-                let mut ray_length_1d = Vector2::new(0.0, 0.0);
-                // 1 or -1
-                let mut step: Vector2<isize> = Vector2::new(0, 0);
-                // Length of side in triangle formed by ray if the other side is length 1 (from one cell to the next)
-                let step_size = Vector2::new(
-                    f64::sqrt(1.0 + (ray_dir.y / ray_dir.x) * (ray_dir.y / ray_dir.x)),
-                    f64::sqrt(1.0 + (ray_dir.x / ray_dir.y) * (ray_dir.x / ray_dir.y)),
-                );
-                
-                // Set step and calculate from position to first intersection point
-                if ray_dir.x < 0.0 {
-                    step.x = -1;
-                    ray_length_1d.x = (ray_start.x - map_pos.x as f64) * step_size.x;
-                } else {
-                    step.x =  1;
-                    ray_length_1d.x = ((map_pos.x + 1) as f64 - ray_start.x) * step_size.x;
-                }
-                if ray_dir.y < 0.0 {
-                    step.y = -1;
-                    ray_length_1d.y = (ray_start.y - map_pos.y as f64) * step_size.y;
-                } else {
-                    step.y =  1;
-                    ray_length_1d.y = ((map_pos.y + 1) as f64 - ray_start.y) * step_size.y;
-                }
-    
-                let mut distance: f64 = 0.0;
-    
-                let mut tile_found = false;
-                // let mut out_of_bounds = false;
-                while !tile_found && distance < 100.0 {
-                    if ray_length_1d.x < ray_length_1d.y {
-                        map_pos.x += step.x;
-                        distance = ray_length_1d.x;
-                        ray_length_1d.x += step_size.x;
-                    } else {
-                        map_pos.y += step.y;
-                        distance = ray_length_1d.y;
-                        ray_length_1d.y += step_size.y;
-                    }
-                    // if  ray_pos.x < 0.0 || ray.pos.x.ceil() >= MAP_WIDTH  as f64 || 
-                    //     ray_pos.y < 0.0 || ray.pos.y.ceil() >= MAP_HEIGHT as f64 {
-                    //     continue;
-                    // }
-                    check_points.push(ray_start + (ray_dir * distance));
-                    // let map_x = ray.pos.x.floor() as usize;
-                    // let map_y = ray.pos.y.floor() as (Hello) usize;
-                    // TODO: bounds checking and tidy up
-                    if map_pos.x > MAP_WIDTH as isize - 1 || map_pos.y > MAP_HEIGHT as isize - 1 ||
-                        map_pos.x < 0 || map_pos.y < 0 {
-                        continue;
-                    }
-                    if map[map_pos.x as usize + map_pos.y as usize * MAP_WIDTH] != 0 {
-                        //println!("dist: {:?}", f64::sqrt((ray_pos[0]-player_pos[0]).powi(2)+(ray_pos[1]-player_pos[1]).powi(2)));
-                        //hit_pos = Some(ray.pos);
-                        tile_found = true;
-                    }
-                }
-                
-                //hit_pos = None;
-                if tile_found {
-                    hit_pos = Some(ray_start + (ray_dir * distance));
-                }
-            // }
+            if input.key_held(KeyCode::ControlLeft) { mov *= 0.5; }
             
-
+            g.player.step(mov * 8.0, deltatime);
+            g.player.pos.x = g.player.pos.x.rem_euclid(g.map_width as f64);
+            g.player.pos.y = g.player.pos.y.rem_euclid(g.map_height as f64);
+            // if let Some(c) = g.map.get_mut(g.player.pos.y as usize * g.map_width + g.player.pos.x as usize) {
+            //     *c = 0;
+            // }
+            // Only rotate if the mouse is locked
+            if cursor_mode == CursorMode::Locked {
+                let mut r: f64 = 0.0;
+                if input.key_held(KeyCode::ArrowLeft)  { r -= 1.0; }
+                if input.key_held(KeyCode::ArrowRight) { r += 1.0; }
+                r += input.mouse_diff().0 as f64 / 10.0;
+                // window.set_cursor_position(LogicalPosition::new(WIDTH, HEIGHT));
+                r *= 0.035;
+                g.player.dir = na::Rotation2::new(r) * g.player.dir;
+                g.player.pitch = (g.player.pitch + input.mouse_diff().1 as f64 / 2.0).clamp(-150.0, 150.0);
+            }
             window.request_redraw();
         }
     }).unwrap();

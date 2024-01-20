@@ -1,34 +1,42 @@
-use crate::{WIDTH, HEIGHT, na, Vector2, util, game::Game};
+use crate::{WIDTH, HEIGHT, na, Vector2, util, game::{Game, player}, ASPECT_RATIO};
 
 use pixels_primitives;
 
 const GRID_SIZE: u32 = 12;
 const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this 
 
-pub fn render_view(game: &Game, screen: &mut [u8]) {
-    let cam_plane = Vector2::new(-game.player.dir.y, game.player.dir.x);
+pub fn render_view(game: &mut Game, screen: &mut [u8]) {
+    game.player.cam_plane = Vector2::new(-game.player.dir.y, game.player.dir.x);
 
     // floor and ceiling
-    draw_rect(screen, 0, 0, WIDTH as usize, HEIGHT as usize/2, &[0x44, 0x55, 0xDD, 0xFF]);
-    draw_rect(screen, 0, HEIGHT as usize/2, WIDTH as usize, HEIGHT as usize, &[0x55, 0x55, 0x55, 0xFF]);
+    let middle = (((HEIGHT/2) as f64 - game.player.pitch) as usize).min(HEIGHT as usize-1);
+    draw_rect(screen, 0, 0,      WIDTH as usize, middle,            &[ 26,  28,  44, 0xFF]);
+    draw_rect(screen, 0, middle, WIDTH as usize, HEIGHT as usize,   &[ 51,  60,  87, 0xFF]);
 
+    // TODO: make it so no-matter the aspect ratio, the map is always cubes
     for w in 0..WIDTH {
-        let raycast_result = util::raycast(&game, game.player.pos, game.player.dir + (cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0)), 100.0);
+        let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
+        let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 500.0);
         if let Some((cell, distance, side)) = raycast_result {
 
+            let head_bob = (game.player.head_bob_amount.sin() * 5.0) / (distance / 5.0);
             let h = HEIGHT as f64;
-            let lineheight = h / distance;
-            let mut draw_start = -lineheight / 2.0 + h / 2.0;
+            let lineheight = (h / distance);// * (1.0/ASPECT_RATIO);
+            let mut draw_start = -lineheight / 2.0 + h / 2.0 + head_bob - game.player.pitch;
             if draw_start < 0.0 { draw_start = 0.0 };
-            let mut draw_end = lineheight / 2.0 + h / 2.0;
-            if draw_end >= h { draw_end= h - 1.0 };
+            let mut draw_end = lineheight / 2.0 + h / 2.0 + head_bob - game.player.pitch;
+            if draw_end > h { draw_end = h };
 
             let mut color = get_col(game.map[cell]);
             if side == util::RaycastSide::Y {
-                color[0] /= 2;
-                color[1] /= 2;
-                color[2] /= 2;
+                color[0] = (color[0] as f32 * 0.7) as u8;
+                color[1] = (color[1] as f32 * 0.7) as u8;
+                color[2] = (color[2] as f32 * 0.7) as u8;
             }
+            let real_dist = distance / ray_direction.angle(&game.player.dir).cos();
+            color[0] = (color[0] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
+            color[1] = (color[1] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
+            color[2] = (color[2] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
             draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
         }
     }
@@ -56,14 +64,24 @@ fn draw_rect(screen: &mut [u8], x_0: usize, y_0: usize, x_1: usize, y_1: usize, 
 }
 
 fn get_col(c: u8) -> [u8;4] {
-    match c {
-        2 => [0xFF, 0x00, 0x00, 0xFF],
-        3 => [0xFF, 0xAA, 0x00, 0xFF],
-        4 => [0xFF, 0xFF, 0x00, 0xFF],
-        5 => [0x00, 0xFF, 0x00, 0xFF],
-        6 => [0x00, 0xFF, 0xFF, 0xFF],
-        7 => [0x00, 0x00, 0xFF, 0xFF],
-        8 => [0xFF, 0x00, 0xFF, 0xFF],
-        _ => [0xFF, 0xFF, 0xFF, 0xFF],
+    // match c {
+    //     2 => [0xFF, 0x00, 0x00, 0xFF], // Red
+    //     3 => [0xFF, 0xAA, 0x00, 0xFF], // Orange
+    //     4 => [0xFF, 0xFF, 0x00, 0xFF], // Yellow
+    //     5 => [0x00, 0xFF, 0x00, 0xFF], // Green
+    //     6 => [0x00, 0xFF, 0xFF, 0xFF], // Cyan
+    //     7 => [0x00, 0x00, 0xFF, 0xFF], // Blue
+    //     8 => [0xFF, 0x00, 0xFF, 0xFF], // Purple
+    //     _ => [0xFF, 0xFF, 0xFF, 0xFF], // White
+    // }
+    match c { // Modified Sweetie-16
+        2 => [177,  62,  83, 0xFF], // Red
+        3 => [239, 125,  87, 0xFF], // Orange
+        4 => [255, 205, 117, 0xFF], // Yellow
+        5 => [ 56, 183, 100, 0xFF], // Green
+        6 => [ 65, 166, 246, 0xFF], // Cyan
+        7 => [ 59,  93, 201, 0xFF], // Blue
+        8 => [149,  82, 165, 0xFF], // Purple
+        _ => [244, 244, 244, 0xFF], // White
     }
 }
