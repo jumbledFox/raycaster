@@ -52,20 +52,35 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
             color[1] = (color[1] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
             color[2] = (color[2] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
             draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
-            draw_slice(screen, w as usize, along, draw_start as usize, draw_end as usize);
+            draw_slice(screen, game, w as usize, along, draw_start as usize, draw_end as usize);
         }
     }
     // }
 }
 
+const WIDTH_USIZE: usize = WIDTH as usize;
 // TODO:
 // Draws a slice of a raycast
-fn draw_slice(screen: &mut [u8], w: usize, along: f64, draw_start: usize, draw_end: usize) {
+fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: usize, draw_end: usize) {
     // for pix in screen.chunks_exact_mut(4).step_by(WIDTH as usize) {
     //     pix.copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
     // }
+    // for s in draw_start..draw_end {
+    //     screen[(s+w*WIDTH as usize)*4..(s+w*WIDTH as usize)*4+3].copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
+    // }
+    //println!("{:?}", w);
+    //
+    let horizontal = (along * game.texture_size.0 as f64) as usize;
+
+    let mut texture_indexes: Vec<usize> = vec![];
+    for h in 0..game.texture_size.1 {
+        texture_indexes.push(h*game.texture_size.0 + horizontal);
+    }
     for s in draw_start..draw_end {
-        screen[(s+w*HEIGHT as usize)*4..(s+w*HEIGHT as usize)*4+4].copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
+        let travelled = (((s-draw_start) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
+        let pos = 1*(w)+WIDTH_USIZE * s;
+        //screen[pos*4..pos*4+4].copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
+        screen[pos*4..pos*4+4].copy_from_slice(&game.texture[texture_indexes[travelled]]);
     }
 }
 
