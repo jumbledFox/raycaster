@@ -26,7 +26,7 @@ pub mod renderer;
 pub mod util;
 pub mod game;
 
-const WIDTH : u32 = 480*2;
+const WIDTH : u32 = 480;
 const HEIGHT: u32 = WIDTH/2;//324;
 const ASPECT_RATIO: f64 = WIDTH as f64 / HEIGHT as f64;
 const GRID_SIZE: u32 = 12;
@@ -95,11 +95,12 @@ fn main() {
 
     let mut g = Game::new();
 
+    let mut fov = 2.0;
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
             match event {
                 WindowEvent::RedrawRequested => {
-                    renderer::render_view(&mut g, pixels.frame_mut());
+                    renderer::render_view(&mut g, pixels.frame_mut(), fov);
                     //draw(pixels.frame_mut(), &player_pos, &player_dir, &cam_plane, &mouse_pos, &hit_pos, &check_points);
 
                     if let Err(err) = pixels.render() {
@@ -203,6 +204,8 @@ fn main() {
             if mov.magnitude() != 0.0 { mov = mov.normalize(); }
             if input.key_held(KeyCode::ControlLeft) { mov *= 0.5; }
             // if g.player.jumping { mov *= 0.5; }
+            if input.key_held(KeyCode::KeyQ) { fov = (fov - deltatime).max(0.01); }
+            if input.key_held(KeyCode::KeyE) { fov += deltatime; }
             
             g.player.step(mov * 8.0, deltatime);
             // g.player.pos.x = g.player.pos.x.rem_euclid(g.map_width as f64);

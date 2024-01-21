@@ -7,9 +7,7 @@ use pixels_primitives;
 const GRID_SIZE: u32 = 12;
 const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this 
 
-pub fn render_view(game: &mut Game, screen: &mut [u8]) {
-    let fov = 2.0;
-
+pub fn render_view(game: &mut Game, screen: &mut [u8], fov: f64) {
     game.player.cam_plane = Vector2::new(-game.player.dir.y, game.player.dir.x) * fov;
 
     // floor and ceiling
@@ -61,9 +59,9 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
                 color[2] = (color[2] as f32 * 0.7) as u8;
             }
             let real_dist = distance / ray_direction.angle(&game.player.dir).cos();
-            color[0] = (color[0] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
-            color[1] = (color[1] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
-            color[2] = (color[2] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
+            color[0] = (color[0] as f64 / (real_dist.max(1.0) / 3.0).max(1.0)) as u8;
+            color[1] = (color[1] as f64 / (real_dist.max(1.0) / 3.0).max(1.0)) as u8;
+            color[2] = (color[2] as f64 / (real_dist.max(1.0) / 3.0).max(1.0)) as u8;
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
             draw_slice(screen, game, w as usize, along, draw_start, draw_end, side == RaycastSide::Y, &color);
         }
