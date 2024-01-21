@@ -8,7 +8,9 @@ const GRID_SIZE: u32 = 12;
 const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this 
 
 pub fn render_view(game: &mut Game, screen: &mut [u8]) {
-    game.player.cam_plane = Vector2::new(-game.player.dir.y, game.player.dir.x);
+    let fov = 2.0;
+
+    game.player.cam_plane = Vector2::new(-game.player.dir.y, game.player.dir.x) * fov;
 
     // floor and ceiling
     let middle = (((HEIGHT/2) as f64 - game.player.pitch) as usize).min(HEIGHT as usize-1);
@@ -18,13 +20,13 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
     // TODO: make it so no-matter the aspect ratio, the map is always cubes
     // for i in 0..100 {
     for w in 0..WIDTH {
-        // if w != WIDTH / 2 {continue;}
+        // if w % 3 != 0 {continue;}
 
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
         let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 500.0);
         if let Some((cell, hit_pos, distance, side)) = raycast_result {
             // Calculating heights
-            let head_height = ((game.player.head_height + ((game.player.jump_amount.abs() / (PI/2.0)) * game.player.head_bob_amount.sin()) * 5.0).clamp(-35.0, 35.0) / (distance / 5.0));
+            let head_height = ((game.player.head_height + ((game.player.jump_amount.abs() / (PI/2.0)) * game.player.head_bob_amount.sin()) * 3.0).clamp(-35.0, 35.0) / (distance / 5.0));
             // if w == 0 {println!("{:?} | {:?}", (game.player.jump_amount.abs() / (PI/2.0)), game.player.jump_amount);}
 
             // let h = HEIGHT as f64;
@@ -35,7 +37,7 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
             // if draw_end > h { draw_end = h };
 
             let h = HEIGHT as isize;
-            let lineheight = (h as f64 / distance) as isize;// * (1.0/ASPECT_RATIO);
+            let lineheight = (h as f64 / (distance*fov)) as isize;// * (1.0/ASPECT_RATIO);
             let mut draw_start = -lineheight / 2 + h / 2 + (head_height - game.player.pitch) as isize;
             // if draw_start < 0 { draw_start = 0 };
             let mut draw_end = lineheight / 2 + h / 2 + (head_height - game.player.pitch) as isize;
@@ -86,7 +88,7 @@ fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: 
     //
     let horizontal = (along * game.texture_size.0 as f64) as usize;
 
-    let mut texture_indexes: Vec<usize> = vec![];
+    let mut texture_indexes: Vec<usize> = Vec::with_capacity(game.texture_size.1);
     for h in 0..game.texture_size.1 {
         texture_indexes.push(h*game.texture_size.0 + horizontal);
     }

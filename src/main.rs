@@ -26,7 +26,7 @@ pub mod renderer;
 pub mod util;
 pub mod game;
 
-const WIDTH : u32 = 480;
+const WIDTH : u32 = 480*2;
 const HEIGHT: u32 = WIDTH/2;//324;
 const ASPECT_RATIO: f64 = WIDTH as f64 / HEIGHT as f64;
 const GRID_SIZE: u32 = 12;
@@ -76,7 +76,7 @@ fn main() {
         let scaled_size = LogicalSize::new(WIDTH as f64 * 2.0, HEIGHT as f64 * 2.0);
         WindowBuilder::new()
             .with_title("Raycasting :3")
-            // .with_title("Raycasting")
+            .with_title("Raycasting")
             .with_inner_size(size)
             .with_min_inner_size(size)
             .build(&event_loop)
@@ -155,7 +155,10 @@ fn main() {
 
             if input.mouse_pressed(0) && cursor_mode == CursorMode::Locked {
                 if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5) {
-                    g.map[cell] = 0;
+                    if !(cell % g.map_width == 0 || cell % g.map_width == g.map_width-1 ||
+                         cell / g.map_width == 0 || cell / g.map_width == g.map_height-1) {
+                        g.map[cell] = 0;
+                    }
                 }
             }
             // This is a bit wonky lol
@@ -168,7 +171,10 @@ fn main() {
                     } else {
                         c = (pos.y as usize).saturating_add_signed(-g.player.dir.y.signum() as isize) * g.map_width + pos.x as usize;
                     }
-                    g.map[c] = 1;
+                    if !(c % g.map_width == 0 || c % g.map_width == g.map_width-1 ||
+                         c / g.map_width == 0 || c / g.map_width == g.map_height-1) {
+                       g.map[c] = 1;
+                   }
                 }
             }
 
@@ -213,6 +219,9 @@ fn main() {
                 // window.set_cursor_position(LogicalPosition::new(WIDTH, HEIGHT));
                 r *= 0.035;
                 g.player.dir = na::Rotation2::new(r) * g.player.dir;
+                if input.key_held(KeyCode::ArrowUp)   { g.player.pitch += 1.0; }
+                if input.key_held(KeyCode::ArrowDown) { g.player.pitch -= 1.0; }
+
                 g.player.pitch = (g.player.pitch + input.mouse_diff().1 as f64 / 2.0).clamp(-150.0, 150.0);
             }
             window.request_redraw();
