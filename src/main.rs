@@ -18,13 +18,15 @@ use pixels_primitives;
 extern crate nalgebra as na;
 use na::Vector2;
 
+use lerp::Lerp;
+
 use rand::Rng;
 
 pub mod renderer;
 pub mod util;
 pub mod game;
 
-const WIDTH : u32 = 576;
+const WIDTH : u32 = 480*2;
 const HEIGHT: u32 = WIDTH/2;//324;
 const ASPECT_RATIO: f64 = WIDTH as f64 / HEIGHT as f64;
 const GRID_SIZE: u32 = 12;
@@ -74,8 +76,8 @@ fn main() {
         let scaled_size = LogicalSize::new(WIDTH as f64 * 2.0, HEIGHT as f64 * 2.0);
         WindowBuilder::new()
             .with_title("Raycasting :3")
-            .with_title("Raycasting")
-            .with_inner_size(scaled_size)
+            // .with_title("Raycasting")
+            .with_inner_size(size)
             .with_min_inner_size(size)
             .build(&event_loop)
             .unwrap()
@@ -127,7 +129,7 @@ fn main() {
                 window.set_cursor_visible(true);
                 cursor_mode = CursorMode::Free;
             }
-            if input.key_pressed(KeyCode::KeyQ) {
+            if input.key_pressed(KeyCode::Tab) {
                 cursor_mode = match cursor_mode {
                     CursorMode::Free   => {
                         window.set_cursor_grab(winit::window::CursorGrabMode::Confined);
@@ -157,6 +159,23 @@ fn main() {
                 }
             }
 
+            // if input.key_held(KeyCode::KeyQ) { g.player.head_height += 8.0 * deltatime; }
+            // if input.key_held(KeyCode::KeyE) { g.player.head_height -= 8.0 * deltatime; }
+            if input.key_held(KeyCode::Space) && !g.player.jumping { g.player.jumping = true; }
+
+            // TODO: Make headbob better
+            // if g.player.vel.magnitude() < 0.5 { g.player.head_bob_amount = g.player.head_bob_amount.lerp(0.0, (deltatime * 1.0).min(1.0)); }
+            // println!("{:?} {:?}", g.player.head_bob_amount, g.player.vel.magnitude());
+            if g.player.jumping {
+                g.player.jump_amount += deltatime * 5.0;
+                // g.player.head_bob_amount = g.player.head_bob_amount.lerp(0.0, deltatime * 10.0);
+                g.player.head_height = g.player.jump_amount.cos() * 35.0;
+                if g.player.jump_amount > PI/2.0 {
+                    g.player.jumping = false;
+                    g.player.jump_amount = -PI/2.0;
+                }
+            }
+
             let mut mov = Vector2::new(0.0, 0.0);
             if input.key_held(KeyCode::KeyW) { mov.y += 1.0; }
             if input.key_held(KeyCode::KeyA) { mov.x -= 1.0; }
@@ -164,6 +183,7 @@ fn main() {
             if input.key_held(KeyCode::KeyD) { mov.x += 1.0; }
             if mov.magnitude() != 0.0 { mov = mov.normalize(); }
             if input.key_held(KeyCode::ControlLeft) { mov *= 0.5; }
+            // if g.player.jumping { mov *= 0.5; }
             
             g.player.step(mov * 8.0, deltatime);
             // g.player.pos.x = g.player.pos.x.rem_euclid(g.map_width as f64);

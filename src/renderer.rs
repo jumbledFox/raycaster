@@ -1,4 +1,6 @@
-use crate::{WIDTH, HEIGHT, na, Vector2, util, game::{Game, player}, ASPECT_RATIO};
+use std::f64::consts::PI;
+
+use crate::{WIDTH, HEIGHT, na, Vector2, util::{self, RaycastSide}, game::{Game, player}, ASPECT_RATIO};
 
 use pixels_primitives;
 
@@ -22,12 +24,14 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
         let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 100.0);
         if let Some((cell, hit_pos, distance, side)) = raycast_result {
             // Calculating heights
-            let head_bob = (game.player.head_bob_amount.sin() * 5.0) / (distance / 5.0);
+            let head_height = ((game.player.head_height + ((game.player.jump_amount.abs() / (PI/2.0)) * game.player.head_bob_amount.sin()) * 5.0).clamp(-35.0, 35.0) / (distance / 5.0));
+            // if w == 0 {println!("{:?} | {:?}", (game.player.jump_amount.abs() / (PI/2.0)), game.player.jump_amount);}
+
             let h = HEIGHT as f64;
             let lineheight = (h / distance);// * (1.0/ASPECT_RATIO);
-            let mut draw_start = -lineheight / 2.0 + h / 2.0 + head_bob - game.player.pitch;
+            let mut draw_start = -lineheight / 2.0 + h / 2.0 + head_height - game.player.pitch;
             if draw_start < 0.0 { draw_start = 0.0 };
-            let mut draw_end = lineheight / 2.0 + h / 2.0 + head_bob - game.player.pitch;
+            let mut draw_end = lineheight / 2.0 + h / 2.0 + head_height - game.player.pitch;
             if draw_end > h { draw_end = h };
 
             // Texture shiz
@@ -37,11 +41,11 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
                 util::RaycastSide::Y => hit_pos.x,
             }.rem_euclid(1.0);
             //if w != WIDTH / 2 {println!("{:?}", along)}
-            let mut color = game.texture[(along * game.texture_size.0 as f64) as usize + game.texture_size.0*5];
+            //let mut color = game.texture[(along * game.texture_size.0 as f64) as usize + game.texture_size.0*5];
             //println!("{:?}", along);
 
             // Color stuff
-            //let mut color = get_col(game.map[cell]);
+            let mut color = get_col(game.map[cell]);
             if side == util::RaycastSide::Y {
                 color[0] = (color[0] as f32 * 0.7) as u8;
                 color[1] = (color[1] as f32 * 0.7) as u8;
@@ -51,8 +55,8 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
             color[0] = (color[0] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
             color[1] = (color[1] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
             color[2] = (color[2] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
-            draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
-            draw_slice(screen, game, w as usize, along, draw_start as usize, draw_end as usize);
+            // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
+            draw_slice(screen, game, w as usize, along, draw_start as usize, draw_end as usize, side == RaycastSide::Y);
         }
     }
     // }
@@ -61,7 +65,7 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
 const WIDTH_USIZE: usize = WIDTH as usize;
 // TODO:
 // Draws a slice of a raycast
-fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: usize, draw_end: usize) {
+fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: usize, draw_end: usize, half: bool) {
     // for pix in screen.chunks_exact_mut(4).step_by(WIDTH as usize) {
     //     pix.copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
     // }
@@ -80,7 +84,11 @@ fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: 
         let travelled = (((s-draw_start) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
         let pos = 1*(w)+WIDTH_USIZE * s;
         //screen[pos*4..pos*4+4].copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
-        screen[pos*4..pos*4+4].copy_from_slice(&game.texture[texture_indexes[travelled]]);
+        let mut c = game.texture[texture_indexes[travelled]];
+        if half {
+            c[3] = 100;
+        }
+        screen[pos*4..pos*4+4].copy_from_slice(&c);
     }
 }
 

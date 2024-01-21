@@ -14,10 +14,10 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Game {
-        let im = image::open("res/tarkus.png").unwrap().to_rgba8();
+        // let im = image::open("res/tarkus.png").unwrap().to_rgba8();
+        // let im = image::open("res/example_img.png").unwrap().to_rgba8();
+        let im = image::open("res/wolf.png").unwrap().to_rgba8();
         let texture: Vec<u8> = im.clone().into_raw();
-        println!("{:?}", texture.len());
-
         Game {
             player: Player::new(),
             texture: texture.chunks_exact(4).map(|chunk| chunk.try_into().unwrap()).collect(),
