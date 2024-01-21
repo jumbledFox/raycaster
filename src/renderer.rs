@@ -60,6 +60,9 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
         }
     }
     // }
+    let middle = (WIDTH*(HEIGHT/2) + WIDTH/2) as usize;
+    draw_rect(screen, (WIDTH/2 - 2) as usize, (HEIGHT/2 - 2) as usize, (WIDTH/2 + 2) as usize, (HEIGHT/2 + 2) as usize, &[0xFF, 0xAA, 0x00, 0xFF]);
+    //screen[middle*4..middle*4+4].copy_from_slice();
 }
 
 const WIDTH_USIZE: usize = WIDTH as usize;
@@ -85,9 +88,9 @@ fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: 
         let pos = 1*(w)+WIDTH_USIZE * s;
         //screen[pos*4..pos*4+4].copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
         let mut c = game.texture[texture_indexes[travelled]];
-        if half {
-            c[3] = 100;
-        }
+        // if half {
+        //     c[3] = 100;
+        // }
         screen[pos*4..pos*4+4].copy_from_slice(&c);
     }
 }

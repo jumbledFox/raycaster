@@ -154,8 +154,20 @@ fn main() {
             // }
 
             if input.mouse_pressed(0) {
-                if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 2.5) {
+                if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5) {
                     g.map[cell] = 0;
+                }
+            }
+            if input.mouse_pressed(1) {
+                if let Some((cell, pos, real_dist, side)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5) {
+                    // g.map[cell] = 0;
+                    let mut c: usize = 0;
+                    if side == util::RaycastSide::X {
+                        c = pos.y as usize * g.map_width + (pos.x as usize).saturating_add_signed(-g.player.dir.x.signum() as isize);
+                    } else {
+                        c = (pos.y as usize).saturating_add_signed(-g.player.dir.y.signum() as isize) * g.map_width + pos.x as usize;
+                    }
+                    g.map[c] = 1;
                 }
             }
 
