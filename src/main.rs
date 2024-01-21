@@ -26,7 +26,7 @@ pub mod renderer;
 pub mod util;
 pub mod game;
 
-const WIDTH : u32 = 480*2;
+const WIDTH : u32 = 480;
 const HEIGHT: u32 = WIDTH/2;//324;
 const ASPECT_RATIO: f64 = WIDTH as f64 / HEIGHT as f64;
 const GRID_SIZE: u32 = 12;
@@ -153,12 +153,13 @@ fn main() {
             //     };
             // }
 
-            if input.mouse_pressed(0) {
+            if input.mouse_pressed(0) && cursor_mode == CursorMode::Locked {
                 if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5) {
                     g.map[cell] = 0;
                 }
             }
-            if input.mouse_pressed(1) {
+            // This is a bit wonky lol
+            if input.mouse_pressed(1) && cursor_mode == CursorMode::Locked {
                 if let Some((cell, pos, real_dist, side)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5) {
                     // g.map[cell] = 0;
                     let mut c: usize = 0;

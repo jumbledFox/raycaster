@@ -2,7 +2,7 @@ use nalgebra::Vector2;
 
 use crate::{WIDTH, game::Game};
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum RaycastSide { X, Y }
 
 // Shoots a raycast from a position and a direction and returns what it hit (as an index in the map),
@@ -83,13 +83,15 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
         // if map_pos.x > MAP_WIDTH+1 || map_pos.y > MAP_HEIGHT+1 {
         //     continue;
         // }
+        
+        // map_pos.x = map_pos.x.rem_euclid(game.map_width as isize);
+        // map_pos.y = map_pos.y.rem_euclid(game.map_height as isize);
 
         if  map_pos.x > game.map_width as isize - 1 || map_pos.y > game.map_height as isize - 1 ||
             map_pos.x < 0 || map_pos.y < 0 {
             break;
         }
-        // map_pos.x = map_pos.x.rem_euclid(game.map_width as isize);
-        // map_pos.y = map_pos.y.rem_euclid(game.map_height as isize);
+        
         // Maybe if i optimise this it'll be a lot faster
         let x_pos: Result<usize, _> = map_pos.x.try_into();
         let y_pos: Result<usize, _> = map_pos.y.try_into();

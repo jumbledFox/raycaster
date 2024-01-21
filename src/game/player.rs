@@ -35,7 +35,7 @@ impl Player {
         //self.vel *= 1.0-(delta * 10.0).min(1.0);
 
         // TODO: better movement
-        let dir = dir * 0.7;
+        let dir = dir * 0.6;
         self.vel *= 1.0-(delta * 10.0).min(1.0);
         // I don't like leaving it to decay forever, this works :3
         if self.vel.magnitude() < 0.005 { self.vel = Vector2::zeros() };

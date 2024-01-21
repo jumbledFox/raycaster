@@ -21,18 +21,25 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
         // if w != WIDTH / 2 {continue;}
 
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
-        let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 100.0);
+        let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 500.0);
         if let Some((cell, hit_pos, distance, side)) = raycast_result {
             // Calculating heights
             let head_height = ((game.player.head_height + ((game.player.jump_amount.abs() / (PI/2.0)) * game.player.head_bob_amount.sin()) * 5.0).clamp(-35.0, 35.0) / (distance / 5.0));
             // if w == 0 {println!("{:?} | {:?}", (game.player.jump_amount.abs() / (PI/2.0)), game.player.jump_amount);}
 
-            let h = HEIGHT as f64;
-            let lineheight = (h / distance);// * (1.0/ASPECT_RATIO);
-            let mut draw_start = -lineheight / 2.0 + h / 2.0 + head_height - game.player.pitch;
-            if draw_start < 0.0 { draw_start = 0.0 };
-            let mut draw_end = lineheight / 2.0 + h / 2.0 + head_height - game.player.pitch;
-            if draw_end > h { draw_end = h };
+            // let h = HEIGHT as f64;
+            // let lineheight = (h / distance);// * (1.0/ASPECT_RATIO);
+            // let mut draw_start = -lineheight / 2.0 + h / 2.0 + head_height - game.player.pitch;
+            // if draw_start < 0.0 { draw_start = 0.0 };
+            // let mut draw_end = lineheight / 2.0 + h / 2.0 + head_height - game.player.pitch;
+            // if draw_end > h { draw_end = h };
+
+            let h = HEIGHT as isize;
+            let lineheight = (h as f64 / distance) as isize;// * (1.0/ASPECT_RATIO);
+            let mut draw_start = -lineheight / 2 + h / 2 + (head_height - game.player.pitch) as isize;
+            // if draw_start < 0 { draw_start = 0 };
+            let mut draw_end = lineheight / 2 + h / 2 + (head_height - game.player.pitch) as isize;
+            // if draw_end > h { draw_end = h };
 
             // Texture shiz
             // How far along the texture is
@@ -56,7 +63,7 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
             color[1] = (color[1] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
             color[2] = (color[2] as f64 / (real_dist.max(1.0) / 10.0).max(1.0)) as u8;
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
-            draw_slice(screen, game, w as usize, along, draw_start as usize, draw_end as usize, side == RaycastSide::Y);
+            draw_slice(screen, game, w as usize, along, draw_start, draw_end, side == RaycastSide::Y, &color);
         }
     }
     // }
@@ -68,7 +75,7 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
 const WIDTH_USIZE: usize = WIDTH as usize;
 // TODO:
 // Draws a slice of a raycast
-fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: usize, draw_end: usize, half: bool) {
+fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: isize, draw_end: isize, half: bool, col: &[u8; 4]) {
     // for pix in screen.chunks_exact_mut(4).step_by(WIDTH as usize) {
     //     pix.copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
     // }
@@ -83,11 +90,19 @@ fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: 
     for h in 0..game.texture_size.1 {
         texture_indexes.push(h*game.texture_size.0 + horizontal);
     }
-    for s in draw_start..draw_end {
-        let travelled = (((s-draw_start) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
+    for s in draw_start.clamp(0, HEIGHT as isize) as usize..draw_end.clamp(0, HEIGHT as isize) as usize {
+        // let travelled = (((s-draw_start) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
+        //let travelled1 = (((s as isize-draw_start as usize) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
+        let travelled = (((s as isize -draw_start)*game.texture_size.0 as isize) / ((draw_end-draw_start))).clamp(0, HEIGHT as isize) as usize;
+        // println!("{:?} {:?}", travelled1, travelled);
+        // TODO: this shit
+
         let pos = 1*(w)+WIDTH_USIZE * s;
         //screen[pos*4..pos*4+4].copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
         let mut c = game.texture[texture_indexes[travelled]];
+        c[0] = ((c[0] as f32 / 255.0)*(col[0] as f32)) as u8;
+        c[1] = ((c[1] as f32 / 255.0)*(col[1] as f32)) as u8;
+        c[2] = ((c[2] as f32 / 255.0)*(col[2] as f32)) as u8;
         // if half {
         //     c[3] = 100;
         // }
