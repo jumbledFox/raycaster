@@ -16,7 +16,7 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
     // TODO: make it so no-matter the aspect ratio, the map is always cubes
     // for i in 0..100 {
     for w in 0..WIDTH {
-        //if w != WIDTH / 2 {continue;}
+        // if w != WIDTH / 2 {continue;}
 
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
         let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 100.0);
@@ -61,10 +61,11 @@ pub fn render_view(game: &mut Game, screen: &mut [u8]) {
 // TODO:
 // Draws a slice of a raycast
 fn draw_slice(screen: &mut [u8], w: usize, along: f64, draw_start: usize, draw_end: usize) {
-    println!("{:?}", screen.len());
-
-    for pix in screen[(w * WIDTH as usize + draw_start)..(w * WIDTH as usize + draw_end)].chunks_exact_mut(4) {
-        pix.copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
+    // for pix in screen.chunks_exact_mut(4).step_by(WIDTH as usize) {
+    //     pix.copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
+    // }
+    for s in draw_start..draw_end {
+        screen[(s+w*HEIGHT as usize)*4..(s+w*HEIGHT as usize)*4+4].copy_from_slice(&[0xFF, 0x00, 0x00, 0xFF]);
     }
 }
 
