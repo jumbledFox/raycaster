@@ -42,7 +42,7 @@ impl Player {
         self.vel += na::Rotation2::new(PI / 2.0) * self.dir * dir.x * delta;
         self.vel += self.dir * dir.y * delta;
         
-        self.head_bob_amount = (self.head_bob_amount + self.vel.magnitude().min(1.0) * delta * 20.0 * 1.4).rem_euclid(PI*2.0);
+        //self.head_bob_amount = (self.head_bob_amount + self.vel.magnitude().min(1.0) * delta * 20.0 * 1.4).rem_euclid(PI*2.0);
         //self.head_bob_amount += (delta * 10.0).rem_euclid(PI*2.0);
         self.pos.x += self.vel.x * 10.0 * delta;
         self.pos.y += self.vel.y * 10.0 * delta;
