@@ -7,7 +7,7 @@ use pixels_primitives;
 const GRID_SIZE: u32 = 12;
 const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this 
 
-pub fn render_view(game: &mut Game, screen: &mut [u8], fov: f64) {
+pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
     game.player.cam_plane = Vector2::new(-game.player.dir.y, game.player.dir.x) * fov;
 
     // floor and ceiling
@@ -111,8 +111,17 @@ fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: 
 }
 
 // Draws the map on to the screen
-pub fn render_map(screen: &mut [u8], game: &Game) {
-
+pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
+    for (i, &cell) in game.map.iter().enumerate() {
+        if cell == 0 { continue; }
+        let x = (i as usize % game.map_width) * cell_size;
+        let y = (i as usize / game.map_width) * cell_size;
+        draw_rect(screen, x, y, x+cell_size, y+cell_size, &get_col(cell));
+    }
+    pixels_primitives::circle(screen, WIDTH as i32,
+        game.player.pos.x.clamp(0.0, game.map_width  as f64) * cell_size as f64,
+        game.player.pos.y.clamp(0.0, game.map_height as f64) * cell_size as f64,
+        cell_size as f64 / 2.0, 1.0, &[0x00, 0xFF, 0x00, 0xFF]);
 }
 
 // A neater way of invoking pixels_primitves functions
@@ -128,16 +137,6 @@ fn draw_rect(screen: &mut [u8], x_0: usize, y_0: usize, x_1: usize, y_1: usize, 
 }
 
 fn get_col(c: u8) -> [u8;4] {
-    // match c {
-    //     2 => [0xFF, 0x00, 0x00, 0xFF], // Red
-    //     3 => [0xFF, 0xAA, 0x00, 0xFF], // Orange
-    //     4 => [0xFF, 0xFF, 0x00, 0xFF], // Yellow
-    //     5 => [0x00, 0xFF, 0x00, 0xFF], // Green
-    //     6 => [0x00, 0xFF, 0xFF, 0xFF], // Cyan
-    //     7 => [0x00, 0x00, 0xFF, 0xFF], // Blue
-    //     8 => [0xFF, 0x00, 0xFF, 0xFF], // Purple
-    //     _ => [0xFF, 0xFF, 0xFF, 0xFF], // White
-    // }
     match c { // Modified Sweetie-16
         2 => [177,  62,  83, 0xFF], // Red
         3 => [239, 125,  87, 0xFF], // Orange

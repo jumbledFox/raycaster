@@ -100,7 +100,8 @@ fn main() {
         if let Event::WindowEvent { event, .. } = &event {
             match event {
                 WindowEvent::RedrawRequested => {
-                    renderer::render_view(&mut g, pixels.frame_mut(), fov);
+                    renderer::render_view(pixels.frame_mut(), &mut g, fov);
+                    renderer::render_map(pixels.frame_mut(), &mut g, 3);
                     //draw(pixels.frame_mut(), &player_pos, &player_dir, &cam_plane, &mouse_pos, &hit_pos, &check_points);
 
                     if let Err(err) = pixels.render() {
@@ -181,11 +182,12 @@ fn main() {
 
             // if input.key_held(KeyCode::KeyQ) { g.player.head_height += 8.0 * deltatime; }
             // if input.key_held(KeyCode::KeyE) { g.player.head_height -= 8.0 * deltatime; }
-            if input.key_held(KeyCode::Space) && !g.player.jumping { g.player.jumping = true; }
 
             // TODO: Make headbob better
             // if g.player.vel.magnitude() < 0.5 { g.player.head_bob_amount = g.player.head_bob_amount.lerp(0.0, (deltatime * 1.0).min(1.0)); }
             // println!("{:?} {:?}", g.player.head_bob_amount, g.player.vel.magnitude());
+            // TODO: jumping
+            //if input.key_held(KeyCode::Space) && !g.player.jumping { g.player.jumping = true; }
             if g.player.jumping {
                 g.player.jump_amount += deltatime * 5.0;
                 // g.player.head_bob_amount = g.player.head_bob_amount.lerp(0.0, deltatime * 10.0);
