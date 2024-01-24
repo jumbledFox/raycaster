@@ -6,8 +6,8 @@ use crate::{WIDTH, game::Game};
 pub enum RaycastSide { X, Y }
 
 // Shoots a raycast from a position and a direction and returns what it hit (as an index in the map),
-// the hit point, how far away it was, and if it hit x or y!
-pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64) -> Option<(usize, Vector2<f64>, f64, RaycastSide)> {
+// the hit point, how far away it was, if it hit x or y, and how many mirrors it hit!!
+pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64) -> Option<(usize, Vector2<f64>, f64, RaycastSide, usize)> {
     // If the ray is out of bounds, don't bother.
     if  start_pos.x < 0.0 || start_pos.x > game.map_width  as f64 ||
         start_pos.y < 0.0 || start_pos.y > game.map_height as f64 {
@@ -26,8 +26,8 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
     // Accumulated columns and rows of the length of the ray, used to compare.
     let mut ray_length_1d = Vector2::new(0.0, 0.0);
     // 1 or -1 for each direction
-    let step_x: isize;
-    let step_y: isize;
+    let mut step_x: isize;
+    let mut step_y: isize;
     // Length of side in triangle formed by ray if the other side is length 1 (from one cell to the next)
     let step_size = Vector2::new(
         f64::sqrt(1.0 + (dir.y / dir.x) * (dir.y / dir.x)),
@@ -53,8 +53,32 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
     let mut side = RaycastSide::X;
     
     let mut tile_found = false;
+    let mut iterations = 0;
+
+    let mut mirror_hits: usize = 0;
     // // let mut out_of_bounds = false;
     while !tile_found && distance < max_dist {
+        iterations += 1;
+        if iterations > 500 { 
+            // println!("max iterations reached!!");
+            break;
+        }
+        // // If the tile is a mirror
+        // // shit code ahead:
+        // let x_pos: Result<usize, _> = map_pos.x.try_into();
+        // let y_pos: Result<usize, _> = map_pos.y.try_into();
+        // if x_pos.is_err() || y_pos.is_err() { continue; }
+        // if let Some(&tile) = game.map.get(x_pos.unwrap() + y_pos.unwrap() * game.map_width) {
+        //     if tile == 9 {
+        //         match ray_length_1d.x > ray_length_1d.y {
+        //             true  => step_y *= -1,
+        //             false => step_x *= -1,
+        //         }
+        //         continue;
+        //     }
+        // }
+
+
         // Move along either X or Y
         if ray_length_1d.x < ray_length_1d.y {
             map_pos.x += step_x;
@@ -96,8 +120,20 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
         let x_pos: Result<usize, _> = map_pos.x.try_into();
         let y_pos: Result<usize, _> = map_pos.y.try_into();
         if x_pos.is_err() || y_pos.is_err() { continue; }
-        if let Some(tile) = game.map.get(x_pos.unwrap() + y_pos.unwrap() * game.map_width) {
-            if *tile != 0 {tile_found = true};
+        if let Some(&tile) = game.map.get(x_pos.unwrap() + y_pos.unwrap() * game.map_width) {
+            if tile == 9 {
+                mirror_hits += 1;
+                match ray_length_1d.x > ray_length_1d.y {
+                    true  => { /*ray_length_1d.y += step_size.y; distance = ray_length_1d.y;*/ step_y *= -1; map_pos.y += step_y; },
+                    false => { /*ray_length_1d.x += step_size.x; distance = ray_length_1d.x;*/ step_x *= -1; map_pos.x += step_x; },
+                }
+            }
+        }
+        let x_pos: Result<usize, _> = map_pos.x.try_into();
+        let y_pos: Result<usize, _> = map_pos.y.try_into();
+        if x_pos.is_err() || y_pos.is_err() { continue; }
+        if let Some(&tile) = game.map.get(x_pos.unwrap() + y_pos.unwrap() * game.map_width) {
+            if tile != 0 {tile_found = true};
         }
     }
     // For correcting bulge, instead of this method, which doesn't seem to work:
@@ -108,7 +144,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
     match tile_found && distance < max_dist {
         true =>  {
             let perp_dist = distance*dir.angle(&game.player.dir).cos();
-            Some((map_pos.y as usize * game.map_width + map_pos.x as usize, start_pos + dir*perp_dist, perp_dist, side))
+            Some((map_pos.y as usize * game.map_width + map_pos.x as usize, start_pos + dir*perp_dist, perp_dist, side, mirror_hits))
         }
         false => None
     }

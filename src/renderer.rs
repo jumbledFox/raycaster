@@ -12,8 +12,8 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
     // floor and ceiling
     let middle = (((HEIGHT/2) as f64 - game.player.pitch) as usize).min(HEIGHT as usize-1);
-    draw_rect(screen, 0, 0,      WIDTH as usize, middle,            &[ 26,  28,  44, 0xFF]);
-    draw_rect(screen, 0, middle, WIDTH as usize, HEIGHT as usize,   &[ 51,  60,  87, 0xFF]);
+    // draw_rect(screen, 0, 0,      WIDTH as usize, middle,            &[ 26,  28,  44, 0xFF]);
+    // draw_rect(screen, 0, middle, WIDTH as usize, HEIGHT as usize,   &[ 51,  60,  87, 0xFF]);
 
     // TODO: make it so no-matter the aspect ratio, the map is always cubes
     // for i in 0..100 {
@@ -22,7 +22,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
         let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 500.0);
-        if let Some((cell, hit_pos, distance, side)) = raycast_result {
+        if let Some((cell, hit_pos, distance, side, mirror_hits)) = raycast_result {
             // Calculating heights
             let head_height = ((game.player.head_height + ((game.player.jump_amount.abs() / (PI/2.0)) * game.player.head_bob_amount.sin()) * 3.0).clamp(-35.0, 35.0) / (distance / 5.0));
             // if w == 0 {println!("{:?} | {:?}", (game.player.jump_amount.abs() / (PI/2.0)), game.player.jump_amount);}
@@ -53,6 +53,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
             // Color stuff
             let mut color = get_col(game.map[cell]);
+            let mut color = get_col(0);
             if side == util::RaycastSide::Y {
                 color[0] = (color[0] as f32 * 0.7) as u8;
                 color[1] = (color[1] as f32 * 0.7) as u8;
@@ -62,6 +63,15 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             color[0] = (color[0] as f64 / (real_dist.max(1.0) / 3.0).max(1.0)) as u8;
             color[1] = (color[1] as f64 / (real_dist.max(1.0) / 3.0).max(1.0)) as u8;
             color[2] = (color[2] as f64 / (real_dist.max(1.0) / 3.0).max(1.0)) as u8;
+
+            for i in 0..mirror_hits {
+                // color[0] = (color[0] as f32 * 0.7) as u8;
+                // color[1] = (color[1] as f32 * 0.7) as u8;
+                // color[2] = (color[2] as f32 * 1.7).min(255.0) as u8;
+                color[0] = color[0].saturating_add(20);
+                color[1] = color[1].saturating_add(30);
+                color[2] = color[2].saturating_add(60);
+            }
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
             draw_slice(screen, game, w as usize, along, draw_start, draw_end, side == RaycastSide::Y, &color);
         }
@@ -89,6 +99,25 @@ fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: 
     let mut texture_indexes: Vec<usize> = Vec::with_capacity(game.texture_size.1);
     for h in 0..game.texture_size.1 {
         texture_indexes.push(h*game.texture_size.0 + horizontal);
+    }
+    for s in 0..HEIGHT as usize {
+        let pos = 1*(w)+WIDTH_USIZE * s;
+
+        let mut c = [0, 0, 0, 0];
+ 
+        if (s as isize) > draw_start {
+            c = [ 26,  28,  44, 0xFF];
+            c = [0x33, 0x44, 0xAA, 0xFF];
+        } else {
+            c = [ 51,  60,  87, 0xFF];
+            c = [0xAA, 0xAA, 0xAA, 0xFF];
+        }
+
+        c[0] = ((c[0] as f32 / 255.0)*(col[0] as f32)) as u8;
+        c[1] = ((c[1] as f32 / 255.0)*(col[1] as f32)) as u8;
+        c[2] = ((c[2] as f32 / 255.0)*(col[2] as f32)) as u8;
+
+        screen[pos*4..pos*4+4].copy_from_slice(&c);
     }
     for s in draw_start.clamp(0, HEIGHT as isize) as usize..draw_end.clamp(0, HEIGHT as isize) as usize {
         // let travelled = (((s-draw_start) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
