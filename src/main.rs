@@ -6,7 +6,7 @@ use winit::{
     event_loop::{EventLoop, ControlFlow, EventLoopWindowTarget},
     keyboard::KeyCode,
     window::{WindowBuilder, WindowButtons},
-    dpi::{LogicalSize, PhysicalPosition, LogicalPosition},
+    dpi::{LogicalSize, PhysicalPosition, LogicalPosition}, platform::windows::WindowBuilderExtWindows,
 };
 use winit_input_helper::WinitInputHelper;
 
@@ -165,7 +165,7 @@ fn main() {
             }
             // This is a bit wonky lol
             if input.mouse_pressed(1) && cursor_mode == CursorMode::Locked {
-                if let Some((cell, pos, real_dist, side, mirror_hits)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5) {
+                if let Some((cell, pos, real_dist, side)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5) {
                     // g.map[cell] = 0;
                     let mut c: usize = 0;
                     if side == util::RaycastSide::X {
@@ -187,7 +187,7 @@ fn main() {
             // if g.player.vel.magnitude() < 0.5 { g.player.head_bob_amount = g.player.head_bob_amount.lerp(0.0, (deltatime * 1.0).min(1.0)); }
             // println!("{:?} {:?}", g.player.head_bob_amount, g.player.vel.magnitude());
             // TODO: jumping
-            // if input.key_held(KeyCode::Space) && !g.player.jumping { g.player.jumping = true; }
+            //if input.key_held(KeyCode::Space) && !g.player.jumping { g.player.jumping = true; }
             if g.player.jumping {
                 g.player.jump_amount += deltatime * 5.0;
                 // g.player.head_bob_amount = g.player.head_bob_amount.lerp(0.0, deltatime * 10.0);
