@@ -98,6 +98,7 @@ fn main() {
     let mut lasttime = Instant::now();
 
     let mut g = Game::new();
+    let mut render_map = false;
 
     let mut fov = 2.0;
     event_loop.run(move |event, control_flow| {
@@ -105,8 +106,9 @@ fn main() {
             match event {
                 WindowEvent::RedrawRequested => {
                     renderer::render_view(pixels.frame_mut(), &mut g, fov);
-                    renderer::render_map(pixels.frame_mut(), &mut g, 4);
-                    //draw(pixels.frame_mut(), &player_pos, &player_dir, &cam_plane, &mouse_pos, &hit_pos, &check_points);
+                    if render_map {
+                        renderer::render_map(pixels.frame_mut(), &mut g, 4);
+                    }
 
                     if let Err(err) = pixels.render() {
                         return log_error("pixels.render", err, &control_flow);
@@ -130,11 +132,15 @@ fn main() {
                     return log_error("pixels.render", err, &control_flow);
                 }
             }
-            if !window.has_focus() {
+
+            // Cursor modes
+            // Unlock if window loses focus
+            if !window.has_focus() && cursor_mode == CursorMode::Locked {
                 window.set_cursor_grab(winit::window::CursorGrabMode::None);
                 window.set_cursor_visible(true);
                 cursor_mode = CursorMode::Free;
             }
+            // Switch cursor modes when user presses Tab
             if input.key_pressed(KeyCode::Tab) {
                 cursor_mode = match cursor_mode {
                     CursorMode::Free   => {
@@ -149,16 +155,12 @@ fn main() {
                     }
                 }
             }
+            // If the cursor should be locked, move it to the middle every frame
             if cursor_mode == CursorMode::Locked {
                 window.set_cursor_position(LogicalPosition::new(window.inner_size().width/2, window.inner_size().height/2));
             }
-            // if let Some(p) = input.cursor() {
-            //     mouse_pos = match pixels.window_pos_to_pixel(p) {
-            //         Ok(p_pos)  => Vector2::new(p_pos.0 as f64, p_pos.1 as f64),
-            //         Err(p_pos) => Vector2::new(p_pos.0 as f64, p_pos.1 as f64),
-            //     };
-            // }
 
+            // Breaking blocks
             if input.mouse_pressed(0) && cursor_mode == CursorMode::Locked {
                 if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5) {
                     if !(cell % g.map_width == 0 || cell % g.map_width == g.map_width-1 ||
@@ -167,6 +169,7 @@ fn main() {
                     }
                 }
             }
+            // Placing blocks
             // This is a bit wonky lol
             if input.mouse_pressed(1) && cursor_mode == CursorMode::Locked {
                 if let Some((cell, pos, real_dist, side)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5) {
@@ -184,23 +187,10 @@ fn main() {
                 }
             }
 
-            // if input.key_held(KeyCode::KeyQ) { g.player.head_height += 8.0 * deltatime; }
-            // if input.key_held(KeyCode::KeyE) { g.player.head_height -= 8.0 * deltatime; }
-
-            // TODO: Make headbob better
-            // if g.player.vel.magnitude() < 0.5 { g.player.head_bob_amount = g.player.head_bob_amount.lerp(0.0, (deltatime * 1.0).min(1.0)); }
-            // println!("{:?} {:?}", g.player.head_bob_amount, g.player.vel.magnitude());
-            // TODO: jumping
-            //if input.key_held(KeyCode::Space) && !g.player.jumping { g.player.jumping = true; }
-            if g.player.jumping {
-                g.player.jump_amount += deltatime * 5.0;
-                // g.player.head_bob_amount = g.player.head_bob_amount.lerp(0.0, deltatime * 10.0);
-                g.player.head_height = g.player.jump_amount.cos() * 35.0;
-                if g.player.jump_amount > PI/2.0 {
-                    g.player.jumping = false;
-                    g.player.jump_amount = -PI/2.0;
-                }
-            }
+            // Player controls            
+            if input.key_pressed(KeyCode::KeyC) { render_map = !render_map; }
+            if input.key_held(KeyCode::KeyQ) { fov = (fov - deltatime).max(0.01); }
+            if input.key_held(KeyCode::KeyE) { fov += deltatime; }
 
             let mut mov = Vector2::new(0.0, 0.0);
             if input.key_held(KeyCode::KeyW) { mov.y += 1.0; }
@@ -209,16 +199,9 @@ fn main() {
             if input.key_held(KeyCode::KeyD) { mov.x += 1.0; }
             if mov.magnitude() != 0.0 { mov = mov.normalize(); }
             if input.key_held(KeyCode::ControlLeft) { mov *= 0.5; }
-            // if g.player.jumping { mov *= 0.5; }
-            if input.key_held(KeyCode::KeyQ) { fov = (fov - deltatime).max(0.01); }
-            if input.key_held(KeyCode::KeyE) { fov += deltatime; }
-            
+
             g.player.step(mov * 8.0, deltatime);
-            // g.player.pos.x = g.player.pos.x.rem_euclid(g.map_width as f64);
-            // g.player.pos.y = g.player.pos.y.rem_euclid(g.map_height as f64);
-            // if let Some(c) = g.map.get_mut(g.player.pos.y as usize * g.map_width + g.player.pos.x as usize) {
-            //     *c = 0;
-            // }
+
             // Only rotate if the mouse is locked
             if cursor_mode == CursorMode::Locked {
                 let mut r: f64 = 0.0;
@@ -233,6 +216,8 @@ fn main() {
 
                 g.player.pitch = (g.player.pitch + input.mouse_diff().1 as f64 / 2.0).clamp(-150.0, 150.0);
             }
+
+            // Redraw
             window.request_redraw();
         }
     }).unwrap();
