@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use crate::{WIDTH, HEIGHT, na, Vector2, util::{self, RaycastSide}, game::{Game, player}, ASPECT_RATIO};
+use crate::{WIDTH, HEIGHT, WIDTH_USIZE, HEIGHT_USIZE, na, Vector2, util::{self, RaycastSide}, game::{Game, player}, ASPECT_RATIO};
 
 use pixels_primitives;
 
@@ -64,6 +64,8 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             color[2] = (color[2] as f64 / (real_dist.max(1.0) / 3.0).max(1.0)) as u8;
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
             draw_slice(screen, game, w as usize, along, draw_start, draw_end, side == RaycastSide::Y, &color);
+
+            if w == WIDTH / 2 { game.player.mid_ray_dist = distance }
         }
     }
     // }
@@ -72,7 +74,6 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
     //screen[middle*4..middle*4+4].copy_from_slice();
 }
 
-const WIDTH_USIZE: usize = WIDTH as usize;
 // TODO:
 // Draws a slice of a raycast
 fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: isize, draw_end: isize, half: bool, col: &[u8; 4]) {
@@ -118,10 +119,11 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
         let y = (i as usize / game.map_width) * cell_size;
         draw_rect(screen, x, y, x+cell_size, y+cell_size, &get_col(cell));
     }
-    pixels_primitives::circle(screen, WIDTH as i32,
+    pixels_primitives::circle_filled(screen, WIDTH as i32,
         game.player.pos.x.clamp(0.0, game.map_width  as f64) * cell_size as f64,
         game.player.pos.y.clamp(0.0, game.map_height as f64) * cell_size as f64,
-        cell_size as f64 / 2.0, 1.0, &[0x00, 0xFF, 0x00, 0xFF]);
+        cell_size as f64 / 2.0, &[0x00, 0xFF, 0x00, 0xFF]);
+    draw_line(screen, game.player.pos * cell_size as f64, (game.player.pos + game.player.dir * game.player.mid_ray_dist) * cell_size as f64, &[0xDD, 0xDD, 0xDD, 0xFF]);
 }
 
 // A neater way of invoking pixels_primitves functions
@@ -131,8 +133,9 @@ fn draw_line(screen: &mut [u8], pos_a: Vector2<f64>, pos_b: Vector2<f64>, col: &
 
 // My own draw_rect function, doesn't do bounds checking but like,, just don't be stupid?? 
 fn draw_rect(screen: &mut [u8], x_0: usize, y_0: usize, x_1: usize, y_1: usize, col: &[u8; 4]) {
+    if x_0 > WIDTH_USIZE || x_1 > WIDTH_USIZE || y_0 > HEIGHT_USIZE || y_1 > HEIGHT_USIZE { return; }
     for y in y_0..y_1 {
-        screen[(x_0+(y)*WIDTH as usize) * 4..(x_1+(y)*WIDTH as usize) * 4].copy_from_slice(&col.repeat(x_1-x_0));
+        screen[(x_0+(y)*WIDTH_USIZE) * 4..(x_1+(y)*WIDTH_USIZE) * 4].copy_from_slice(&col.repeat(x_1-x_0));
     }
 }
 

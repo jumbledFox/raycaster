@@ -13,13 +13,15 @@ pub struct Player {
     pub jumping: bool,
     pub jump_amount: f64,
     pub cam_plane: Vector2<f64>,
+
+    pub mid_ray_dist: f64,
 }
 
 impl Player {
     pub fn new() -> Player {
         Player {
             pos: Vector2::new(1.5, 2.5), dir: Vector2::new(1.0, 0.0), pitch: 0.0,
-            vel: Vector2::zeros(), cam_plane: Vector2::new(-1.0, 0.0), head_bob_amount: 0.0, head_height: 0.0, 
+            vel: Vector2::zeros(), cam_plane: Vector2::new(-1.0, 0.0), head_bob_amount: 0.0, head_height: 0.0, mid_ray_dist: 0.0,
             jumping: false, jump_amount: -PI/2.0 }
     }
 

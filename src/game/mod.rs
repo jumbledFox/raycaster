@@ -16,7 +16,7 @@ impl Game {
     pub fn new() -> Game {
         // let im = image::open("res/tarkus.png").unwrap().to_rgba8();
         // let im = image::open("res/example_img.png").unwrap().to_rgba8();
-        let im = image::open("res/stone.png").unwrap().to_rgba8();
+        let im = image::open("res/bricks.png").unwrap().to_rgba8();
         let texture: Vec<u8> = im.clone().into_raw();
         Game {
             player: Player::new(),

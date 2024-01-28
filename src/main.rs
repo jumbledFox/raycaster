@@ -28,6 +28,10 @@ pub mod game;
 
 const WIDTH : u32 = 480;
 const HEIGHT: u32 = WIDTH/2;//324;
+
+const WIDTH_USIZE: usize = WIDTH as usize;
+const HEIGHT_USIZE: usize = HEIGHT as usize;
+
 const ASPECT_RATIO: f64 = WIDTH as f64 / HEIGHT as f64;
 const GRID_SIZE: u32 = 12;
 const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this 
@@ -101,7 +105,7 @@ fn main() {
             match event {
                 WindowEvent::RedrawRequested => {
                     renderer::render_view(pixels.frame_mut(), &mut g, fov);
-                    renderer::render_map(pixels.frame_mut(), &mut g, 3);
+                    renderer::render_map(pixels.frame_mut(), &mut g, 4);
                     //draw(pixels.frame_mut(), &player_pos, &player_dir, &cam_plane, &mouse_pos, &hit_pos, &check_points);
 
                     if let Err(err) = pixels.render() {
@@ -240,92 +244,4 @@ fn log_error<E: std::error::Error + 'static>(method_name: &str, err: E, control_
         error!("  Caused by: {source}");
     }
     control_flow.exit();
-}
-
-fn draw(screen: &mut [u8], player_pos: &Vector2<f64>, player_dir: &Vector2<f64>, cam_plane: &Vector2<f64>,
-    mouse_pos: &Vector2<f64>, hit_pos: &Option<Vector2<f64>>, check_points: &Vec<Vector2<f64>>) {
-    // Clear screen
-    //screen.copy_from_slice(&[0x00, 0x00, 0x00, 0xFF].repeat(screen.len()/4));
-
-    // Draw grid
-    // This works for now, even though it's a little slow, so I turn a blind eye and pretend it's fast
-    for x in 0..WIDTH/GRID_SIZE {
-        let x_pos = (x*GRID_SIZE).into();
-        pixels_primitives::line(screen, WIDTH as i32, x_pos, 0.0, x_pos, HEIGHT.into(),
-            &[0x22, 0x22, 0x22, 0xFF]);
-    }
-    for y in 0..HEIGHT/GRID_SIZE {
-        let y_pos = (y*GRID_SIZE).into();
-        pixels_primitives::line(screen, WIDTH as i32, 0.0, y_pos, WIDTH.into(), y_pos,
-            &[0x22, 0x22, 0x22, 0xFF]);
-    }
-    // Draw map
-    for (i, m) in map.iter().enumerate() {
-        if *m == 0 { continue; }
-        let x = i % MAP_WIDTH;
-        let y = i / MAP_WIDTH;
-        draw_rect(screen,
-            x*GRID_SIZE as usize,                      y*GRID_SIZE as usize,
-            x*GRID_SIZE as usize + GRID_SIZE as usize, y*GRID_SIZE as usize + GRID_SIZE as usize,
-            &get_col(*m));
-    }
-    // Draw line from player to mouse
-    draw_line(screen,
-        player_pos * GRID_SIZE_F64, *mouse_pos,
-        &[0x77, 0x00, 0x00, 0xFF]);
-    // Draw ray
-    if let Some(hit_pos) = hit_pos {
-        // Draw hit point
-        pixels_primitives::circle(screen, WIDTH as i32,
-            hit_pos.x * GRID_SIZE_F64, hit_pos.y * GRID_SIZE_F64, 5.0, 1.0, &[0xAA, 0xAA, 0xAA, 0xFF]);
-        // Draw line
-        draw_line(screen,
-            hit_pos * GRID_SIZE_F64, player_pos * GRID_SIZE_F64,
-            &[0x77, 0x77, 0x77, 0xFF]);
-    }
-    for c in check_points {
-        pixels_primitives::circle_filled(screen, WIDTH as i32,
-            c.x * GRID_SIZE_F64, c.y * GRID_SIZE_F64, 2.0, &[0x92, 0x92, 0x92, 0xFF]);
-    }
-
-    // Draw player
-    pixels_primitives::circle(screen, WIDTH as i32,
-        player_pos.x * GRID_SIZE_F64, player_pos.y * GRID_SIZE_F64, 5.0, 1.0, &[0x00, 0xFF, 0x00, 0xFF]);
-    // Draw mouse
-    pixels_primitives::circle(screen, WIDTH as i32,
-        mouse_pos.x, mouse_pos.y, 5.0, 1.0, &[0xFF, 0x00, 0x00, 0xFF]);
-    // Draw direction and cam plane
-    draw_line(screen,
-        player_pos * GRID_SIZE_F64,
-        (player_pos + player_dir) * GRID_SIZE_F64,
-        &[0xFF, 0x00, 0xFF, 0xFF]);
-    draw_line(screen,
-        (player_pos + player_dir - cam_plane) * GRID_SIZE_F64,
-        (player_pos + player_dir + cam_plane) * GRID_SIZE_F64,
-        &[0x00, 0xFF, 0xFF, 0xFF]);
-}
-
-// A neater way of invoking pixels_primitves functions
-fn draw_line(screen: &mut [u8], pos_a: Vector2<f64>, pos_b: Vector2<f64>, col: &[u8; 4]) {
-    pixels_primitives::line(screen, WIDTH as i32, pos_a.x, pos_a.y, pos_b.x, pos_b.y, col);
-}
-
-// My own draw_rect function, doesn't do bounds checking but like,, just don't be stupid?? 
-fn draw_rect(screen: &mut [u8], x_0: usize, y_0: usize, x_1: usize, y_1: usize, col: &[u8; 4]) {
-    for y in y_0..y_1 {
-        screen[(x_0+(y)*WIDTH as usize) * 4..(x_1+(y)*WIDTH as usize) * 4].copy_from_slice(&col.repeat(x_1-x_0));
-    }
-}
-
-fn get_col(c: usize) -> [u8;4] {
-    match c {
-        2 => [0xFF, 0x00, 0x00, 0xFF],
-        3 => [0xFF, 0xAA, 0x00, 0xFF],
-        4 => [0xFF, 0xFF, 0x00, 0xFF],
-        5 => [0x00, 0xFF, 0x00, 0xFF],
-        6 => [0x00, 0xFF, 0xFF, 0xFF],
-        7 => [0x00, 0x00, 0xFF, 0xFF],
-        8 => [0xFF, 0x00, 0xFF, 0xFF],
-        _ => [0xFF, 0xFF, 0xFF, 0xFF],
-    }
 }
