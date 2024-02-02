@@ -2,6 +2,7 @@ use std::{f64::consts::PI, ops::Add};
 
 use crate::{WIDTH, HEIGHT, WIDTH_USIZE, HEIGHT_USIZE, na, Vector2, util::{self, RaycastSide}, game::{Game, player}, ASPECT_RATIO};
 
+use lerp::num_traits::CheckedShr;
 use na::coordinates::X;
 use pixels_primitives;
 
@@ -66,9 +67,14 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
                 // If the light is too far away, ignore it
                 if dist_squared > light.power * 256.0 { continue; }
                 // Ignore the light if it's behind a wall.
-                if let Some(_) = util::raycast(game, hit_pos, (light.pos-hit_pos).normalize(), dist_squared.sqrt() + 0.1) {
-                    continue;
-                }
+                // This doesn't work because the raycast goes up in block steps and can't end at another arbitrary point :c
+                // if let Some((_, __hit_pos, ..)) = util::raycast(game, light.pos, hit_pos-light.pos, dist_squared.sqrt()) {
+                //     if w == WIDTH / 2 {
+                //         game.player.lineposa = light.pos;
+                //         game.player.lineposb = __hit_pos;
+                //     }
+                //     continue;
+                // }
                 // Light intensity = 1 / Distance^2
                 let intensity = light.power / dist_squared;
                 light_level += intensity;
@@ -129,6 +135,13 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
         draw_rect(screen, x, y, x+cell_size, y+cell_size, &get_col(cell));
     }
 
+    for light in &game.lights {
+        pixels_primitives::circle_filled(screen, WIDTH as i32,
+            light.pos.x * cell_size as f64 + render_offset.x,
+            light.pos.y * cell_size as f64 + render_offset.y,
+            cell_size as f64 / 3.0, &[0xFF, 0xFF, 0x00, 0xFF]);
+    }
+
     pixels_primitives::circle_filled(screen, WIDTH as i32,
         game.player.pos.x.clamp(0.0, game.map_width  as f64) * cell_size as f64 + render_offset.x,
         game.player.pos.y.clamp(0.0, game.map_height as f64) * cell_size as f64 + render_offset.y,
@@ -137,6 +150,10 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
          game.player.pos * cell_size as f64 + render_offset,
         (game.player.pos + game.player.dir * game.player.mid_ray_dist) * cell_size as f64 + render_offset,
         &[0xDD, 0xDD, 0xDD, 0xFF]);
+    draw_line(screen,
+        game.player.lineposa * cell_size as f64 + render_offset,
+        game.player.lineposb * cell_size as f64 + render_offset,
+        &[0xFF, 0x00, 0xFF, 0xFF]);
 }
 
 // A neater way of invoking pixels_primitves functions

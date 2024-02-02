@@ -54,6 +54,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
     
     let mut tile_found = false;
     // // let mut out_of_bounds = false;
+
     while !tile_found && distance < max_dist {
         // Move along either X or Y
         if ray_length_1d.x < ray_length_1d.y {
