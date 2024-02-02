@@ -2,7 +2,6 @@ use std::{ops::Mul, f64::consts::PI};
 
 use nalgebra::{Vector2, SimdPartialOrd};
 
-
 pub struct Player {
     pub pos: Vector2<f64>,
     pub vel: Vector2<f64>,
