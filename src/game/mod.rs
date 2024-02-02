@@ -35,7 +35,8 @@ impl Game {
         }
 
         let mut lights: Vec<Light> = Vec::with_capacity(2);
-        lights.push(Light::new(Vector2::new(3.0, 3.0)));
+        // lights.push(Light::new(Vector2::new(3.0, 3.0)));
+        lights.push(Light::new(Vector2::new(1.1, 1.1), 1.0));
 
         Game {
             player: Player::new(),

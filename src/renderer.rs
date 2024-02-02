@@ -58,17 +58,26 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
                 color[1] = (color[1] as f32 * 0.7) as u8;
                 color[2] = (color[2] as f32 * 0.7) as u8;
             }
-            // let real_dist = distance / ray_direction.angle(&game.player.dir).cos();
-            // https://www.google.com/search?q=light+falloff+equation&client=firefox-b-lm&sca_esv=44922cbe319e9a1e&sxsrf=ACQVn09EF-QrtaJZf8O7aUFUOlcyNZd2Lg%3A1706872639321&ei=P8-8ZfaYE_eihbIPts6DwAs&oq=light+falloff&gs_lp=Egxnd3Mtd2l6LXNlcnAiDWxpZ2h0IGZhbGxvZmYqAggAMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMg0QABiABBiKBRhDGLADMg0QABiABBiKBRhDGLADSNwOUABYAHABeAGQAQCYAQCgAQCqAQC4AQHIAQDiAwQYACBBiAYBkAYK&sclient=gws-wiz-serp
-            let mut light_level = 0.0;
-            for light in &game.lights {
-                // calculate distance from light to hit position and add it to the light level
-                // nalgebra::distance(hit_pos, light.pos);
-            }
 
-            // color[0] = (color[0] as f64 / (real_dist.max(1.0) / 3.0).max(1.0)) as u8;
-            // color[1] = (color[1] as f64 / (real_dist.max(1.0) / 3.0).max(1.0)) as u8;
-            // color[2] = (color[2] as f64 / (real_dist.max(1.0) / 3.0).max(1.0)) as u8;
+            // Calculate light level
+            let mut light_level = 0.1;
+            for light in &game.lights {
+                let dist_squared = (hit_pos.x-light.pos.x).powi(2) + (hit_pos.y-light.pos.y).powi(2);
+                // If the light is too far away, ignore it
+                if dist_squared > light.power * 256.0 { continue; }
+                // Ignore the light if it's behind a wall.
+                if let Some(_) = util::raycast(game, hit_pos, (light.pos-hit_pos).normalize(), dist_squared.sqrt() + 0.1) {
+                    continue;
+                }
+                // Light intensity = 1 / Distance^2
+                let intensity = light.power / dist_squared;
+                light_level += intensity;
+            }
+            
+            color[0] = (color[0] as f64 * light_level) as u8;
+            color[1] = (color[1] as f64 * light_level) as u8;
+            color[2] = (color[2] as f64 * light_level) as u8;
+            //if w == 0 {println!("{:?}  {:?}", color, light_level)};
 
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
             draw_slice(screen, game, w as usize, along, draw_start, draw_end, &color);

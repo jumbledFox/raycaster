@@ -61,6 +61,8 @@ fn main() {
     let mut g = Game::new();
     let mut render_map = false;
 
+    let mut power = 0.0;
+
     let mut fov = 2.0;
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
@@ -119,6 +121,22 @@ fn main() {
             // If the cursor should be locked, move it to the middle every frame
             if cursor_mode == CursorMode::Locked {
                 window.set_cursor_position(LogicalPosition::new(window.inner_size().width/2, window.inner_size().height/2));
+            }
+
+            // Light tests
+            if input.key_pressed(KeyCode::KeyR) {
+                g.lights.push(game::light::Light::new(g.player.pos, power));
+            }
+            if input.key_pressed(KeyCode::KeyT) {
+                g.lights.clear();
+            }
+            if input.key_pressed_os(KeyCode::KeyF) {
+                power += 1.0;
+                println!("POWER: {power:?}");
+            }
+            if input.key_pressed_os(KeyCode::KeyG) {
+                power -= 1.0;
+                println!("POWER: {power:?}");
             }
 
             // Breaking blocks
