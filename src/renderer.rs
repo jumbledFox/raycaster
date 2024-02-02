@@ -59,7 +59,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
                 color[2] = (color[2] as f32 * 0.7) as u8;
             }
             // let real_dist = distance / ray_direction.angle(&game.player.dir).cos();
-
+            // https://www.google.com/search?q=light+falloff+equation&client=firefox-b-lm&sca_esv=44922cbe319e9a1e&sxsrf=ACQVn09EF-QrtaJZf8O7aUFUOlcyNZd2Lg%3A1706872639321&ei=P8-8ZfaYE_eihbIPts6DwAs&oq=light+falloff&gs_lp=Egxnd3Mtd2l6LXNlcnAiDWxpZ2h0IGZhbGxvZmYqAggAMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMgoQABhHGNYEGLADMg0QABiABBiKBRhDGLADMg0QABiABBiKBRhDGLADSNwOUABYAHABeAGQAQCYAQCgAQCqAQC4AQHIAQDiAwQYACBBiAYBkAYK&sclient=gws-wiz-serp
             let mut light_level = 0.0;
             for light in &game.lights {
                 // calculate distance from light to hit position and add it to the light level
