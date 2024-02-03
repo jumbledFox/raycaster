@@ -26,7 +26,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
         let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 500.0);
         if let Some((cell, hit_pos, distance, side)) = raycast_result {
             // Calculating heights
-            let head_height = (game.player.head_bob_amount.sin() / distance) * 10.0;
+            let head_height = 0.0;//(game.player.head_bob_amount.sin() / distance) * 10.0;
 
             // let h = HEIGHT as f64;
             // let lineheight = (h / distance);// * (1.0/ASPECT_RATIO);
@@ -67,12 +67,8 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
                 // If the light is too far away, ignore it
                 if dist_squared > light.power * 256.0 { continue; }
                 // Ignore the light if it's behind a wall.
-                // This doesn't work because the raycast goes up in block steps and can't end at another arbitrary point :c
+                // Cast the ray a teeny bit further by a small margin to avoid weird things
                 if let Some((..)) = util::raycast(game, light.pos, (hit_pos-light.pos).normalize(), dist_squared.sqrt() + 0.00001) {
-                    // if w == WIDTH / 2 {
-                    //     game.player.lineposa = light.pos;
-                    //     game.player.lineposb = __hit_pos;
-                    // }
                     continue;
                 }
                 // Light intensity = 1 / Distance^2
