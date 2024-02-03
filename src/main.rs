@@ -61,7 +61,7 @@ fn main() {
     let mut g = Game::new();
     let mut render_map = false;
 
-    let mut power = 0.0;
+    let mut power = 2.0;
 
     let mut fov = 2.0;
     event_loop.run(move |event, control_flow| {

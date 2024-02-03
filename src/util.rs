@@ -18,7 +18,8 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
     // let ray_dir = (player_dir + (cam_plane * 0.0)).normalize();
 
     
-
+    // Where the ray will end
+    let end_pos = start_pos + dir * max_dist;
     // Which box of the map we're in
     let mut map_pos: Vector2<isize> = Vector2::new(
         start_pos.x as isize,
@@ -97,6 +98,17 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
         let x_pos: Result<usize, _> = map_pos.x.try_into();
         let y_pos: Result<usize, _> = map_pos.y.try_into();
         if x_pos.is_err() || y_pos.is_err() { continue; }
+        // If the end pos is in the map pos
+        if  end_pos.x >= 0.0 && end_pos.x < game.map_width as f64 &&
+            end_pos.y >= 0.0 && end_pos.y < game.map_height as f64 {
+                if  end_pos.x.floor() as usize == x_pos.unwrap() && 
+                end_pos.y.floor() as usize == y_pos.unwrap() {
+                println!("{:?} end pos in map pos! {end_pos:?} {map_pos:?}", std::time::SystemTime::now());
+                return None
+            }
+        }
+        
+        // If we've found a tile at the map pos
         if let Some(tile) = game.map.get(x_pos.unwrap() + y_pos.unwrap() * game.map_width) {
             if *tile != 0 {tile_found = true};
         }

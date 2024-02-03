@@ -68,13 +68,13 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
                 if dist_squared > light.power * 256.0 { continue; }
                 // Ignore the light if it's behind a wall.
                 // This doesn't work because the raycast goes up in block steps and can't end at another arbitrary point :c
-                // if let Some((_, __hit_pos, ..)) = util::raycast(game, light.pos, hit_pos-light.pos, dist_squared.sqrt()) {
-                //     if w == WIDTH / 2 {
-                //         game.player.lineposa = light.pos;
-                //         game.player.lineposb = __hit_pos;
-                //     }
-                //     continue;
-                // }
+                if let Some((..)) = util::raycast(game, light.pos, (hit_pos-light.pos).normalize(), dist_squared.sqrt() + 0.00001) {
+                    // if w == WIDTH / 2 {
+                    //     game.player.lineposa = light.pos;
+                    //     game.player.lineposb = __hit_pos;
+                    // }
+                    continue;
+                }
                 // Light intensity = 1 / Distance^2
                 let intensity = light.power / dist_squared;
                 light_level += intensity;
