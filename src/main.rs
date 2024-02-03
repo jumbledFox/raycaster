@@ -145,6 +145,7 @@ fn main() {
                     if !(cell % g.map_width == 0 || cell % g.map_width == g.map_width-1 ||
                          cell / g.map_width == 0 || cell / g.map_width == g.map_height-1) {
                         g.map[cell] = 0;
+                        g.calculate_lightmap();
                     }
                 }
             }
@@ -162,6 +163,8 @@ fn main() {
                     if !(c % g.map_width == 0 || c % g.map_width == g.map_width-1 ||
                          c / g.map_width == 0 || c / g.map_width == g.map_height-1) {
                        g.map[c] = 2;
+                       g.calculate_lightmap();
+
                    }
                 }
             }

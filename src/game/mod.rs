@@ -55,52 +55,50 @@ impl Game {
             .collect();
         for lp in light_positions {
             let mut light_level = 16;
-            let mut done: Vec<(usize, usize)> = vec![];
-            let mut current_positions: Vec<(usize, usize)> = vec![self.index_to_coord(lp)];
-            let mut position_buffer  : Vec<(usize, usize)> = vec![];
+            let mut done: Vec<usize> = vec![];
+            let mut current_positions: Vec<usize> = vec![lp];
+            let mut position_buffer  : Vec<usize> = vec![];
 
             while light_level > 0 {
                 // For each position
-                for coord in &mut current_positions {
-                    let index = self.coord_to_index(coord);
+                for index in &mut current_positions {
                     // Skip if it's been done before
-                    if done.contains(&coord) {
-                        continue;
-                    } else {
-                        done.push(*coord);
-                    }
+                    if done.contains(&index) { continue; }
+                    else { done.push(*index); }
+
                     // Set the light level
-                    self.lightmap[index] = light_level;
+                    self.lightmap[*index] = (self.lightmap[*index] + light_level).min(16);
 
                     // Add all of the neighbours to the position buffer
-                    let c = [(0, 1), (1, 0), (0, -1), (-1, 0)];
-                    for n in c {
+                    let coord = self.index_to_coord(*index);
+                    let neighbour_offsets = [(0, 1), (1, 0), (0, -1), (-1, 0)];
+                    for n in neighbour_offsets {
                         let n_x = coord.0.checked_add_signed(n.0);
                         let n_y = coord.1.checked_add_signed(n.1);
-                        // Skip if neighbour out of bounds.
+                        // Skip if neighbour out of bounds
                         if  n_x.is_none() || n_y.is_none() ||
                             n_x.is_some_and(|j| j >= self.map_width) ||
                             n_y.is_some_and(|j| j >= self.map_height)
                             { continue; }
-                        // Skip if the neighbour is solid.
+
+                        let neighbour_index = self.coord_to_index(&(n_x.unwrap(), n_y.unwrap()));
+                        // Skip if the neighbour is solid
+                        if self.map[neighbour_index] != 0 && self.map[neighbour_index] != 1 {
+                            continue;
+                        }
                         // Add to position buffer (may contain duplicates, so we'll have to deal with that later)
-                        position_buffer.push((n_x.unwrap(), n_y.unwrap()));
+                        position_buffer.push(neighbour_index);
                     }
-                }
-                light_level -= 1;
+                }                
                 // Remove duplicates
                 position_buffer.sort_unstable();
                 position_buffer.dedup();
                 // Swap and clear buffers 
                 position_buffer = std::mem::replace(&mut current_positions, position_buffer);
                 position_buffer.clear();
-            }
 
-            
-            // let mut done_positions: Vec<usize> = vec![];
-            // let x = lp % self.map_width;
-            // let y = lp / self.map_width;
-            // self.lightmap_set_neighbour(&mut done_positions, x, y, 16);
+                light_level -= 1;
+            }
         }
         for y in self.lightmap.chunks_exact(self.map_width) {
             for x in y {
@@ -115,34 +113,5 @@ impl Game {
     }
     pub fn index_to_coord(&self, index: usize) -> (usize, usize) {
         (index % self.map_width, index / self.map_width)
-    }
-
-    fn lightmap_set_neighbour(&mut self, done_positions: &mut Vec<usize>, x: usize, y: usize, light_level: u8) {
-        // Check each neighbour
-        let c = [(0, 1), (1, 0), (0, -1), (-1, 0)];
-        let mut next_ones: Vec<(usize, usize)> = vec![];
-        for i in 0..4 {
-            let x_pos = x.checked_add_signed(c[i].0);
-            let y_pos = y.checked_add_signed(c[i].1);
-            // Skip if neighbour out of bounds.
-            if x_pos.is_none() || y_pos.is_none() ||
-                x_pos.is_some_and(|j| j >= self.map_width) ||
-                y_pos.is_some_and(|j| j >= self.map_height)
-                { continue; }
-            let neighbour_pos = y_pos.unwrap() * self.map_width + x_pos.unwrap();
-            // Skip if the neighbour is solid
-            if self.map[neighbour_pos] != 0 { continue; }
-            // Set the light level and go to the next step (if there's enough light)
-            if !done_positions.contains(&neighbour_pos) {
-                done_positions.push(neighbour_pos);
-                self.lightmap[neighbour_pos] = light_level;
-                if light_level - 1 != 0 {
-                    next_ones.push((x_pos.unwrap(), y_pos.unwrap()));
-                }
-            }
-        }
-        for n in next_ones {
-            self.lightmap_set_neighbour(done_positions, n.0, n.1, light_level-1);
-        }
     }
 }
