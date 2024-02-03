@@ -138,7 +138,6 @@ fn main() {
             //     power -= 1.0;
             //     println!("POWER: {power:?}");
             // }
-            g.lights[0].pos = g.player.pos;
 
             // Breaking blocks
             if input.mouse_pressed(0) && cursor_mode == CursorMode::Locked {
@@ -169,8 +168,8 @@ fn main() {
 
             // Player controls            
             if input.key_pressed(KeyCode::KeyC) { render_map = !render_map; }
-            if input.key_held(KeyCode::KeyQ) { fov = (fov - deltatime).max(0.01); }
-            if input.key_held(KeyCode::KeyE) { fov += deltatime; }
+            // if input.key_held(KeyCode::KeyQ) { fov = (fov - deltatime).max(0.01); }
+            // if input.key_held(KeyCode::KeyE) { fov += deltatime; }
 
             let mut mov = Vector2::new(0.0, 0.0);
             if input.key_held(KeyCode::KeyW) { mov.y += 1.0; }
@@ -181,6 +180,13 @@ fn main() {
             if input.key_held(KeyCode::ControlLeft) { mov *= 0.5; }
 
             g.player.step(mov * 8.0, deltatime);
+
+            for l in &mut g.lights {
+                l.pos += l.vel * 10.0 * deltatime;
+            }
+            if input.key_pressed_os(KeyCode::KeyQ) {
+                g.lights.push(game::light::Light::new(g.player.pos, g.player.dir.normalize(), 2.0));
+            }
 
             // Only rotate if the mouse is locked
             if cursor_mode == CursorMode::Locked {
