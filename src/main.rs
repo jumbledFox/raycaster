@@ -161,7 +161,7 @@ fn main() {
                     }
                     if !(c % g.map_width == 0 || c % g.map_width == g.map_width-1 ||
                          c / g.map_width == 0 || c / g.map_width == g.map_height-1) {
-                       g.map[c] = 1;
+                       g.map[c] = 2;
                    }
                 }
             }
@@ -180,13 +180,6 @@ fn main() {
             if input.key_held(KeyCode::ControlLeft) { mov *= 0.5; }
 
             g.player.step(mov * 8.0, deltatime);
-
-            for l in &mut g.lights {
-                l.pos += l.vel * 10.0 * deltatime;
-            }
-            if input.key_pressed_os(KeyCode::KeyQ) {
-                g.lights.push(game::light::Light::new(g.player.pos, g.player.dir.normalize(), 2.0));
-            }
 
             // Only rotate if the mouse is locked
             if cursor_mode == CursorMode::Locked {

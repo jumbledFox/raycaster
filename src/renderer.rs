@@ -53,32 +53,17 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             //println!("{:?}", along);
 
             // Color stuff
-            let mut color = get_col(game.map[cell]);
+            let mut color = get_col(game.map[cell]-1);
             if side == util::RaycastSide::Y {
                 color[0] = (color[0] as f32 * 0.7) as u8;
                 color[1] = (color[1] as f32 * 0.7) as u8;
                 color[2] = (color[2] as f32 * 0.7) as u8;
             }
 
-            // Calculate light level
-            let mut light_level = 0.1;
-            for light in &game.lights {
-                let dist_squared = (hit_pos.x-light.pos.x).powi(2) + (hit_pos.y-light.pos.y).powi(2);
-                // If the light is too far away, ignore it
-                if dist_squared > light.power * 256.0 { continue; }
-                // Ignore the light if it's behind a wall.
-                // Cast the ray a teeny bit further by a small margin to avoid weird things
-                if let Some((..)) = util::raycast(game, light.pos, (hit_pos-light.pos).normalize(), dist_squared.sqrt() + 0.00001) {
-                    continue;
-                }
-                // Light intensity = 1 / Distance^2
-                let intensity = light.power / dist_squared;
-                light_level += intensity;
-            }
-            
-            color[0] = (color[0] as f64 * light_level) as u8;
-            color[1] = (color[1] as f64 * light_level) as u8;
-            color[2] = (color[2] as f64 * light_level) as u8;
+            let light_level = game.lightmap[cell];
+            color[0] = (color[0] / 16) * (light_level + 1);
+            color[1] = (color[1] / 16) * (light_level + 1);
+            color[2] = (color[2] / 16) * (light_level + 1);
             //if w == 0 {println!("{:?}  {:?}", color, light_level)};
 
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
@@ -128,14 +113,7 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
         if cell == 0 { continue; }
         let x = (i as usize % game.map_width) * cell_size + render_offset_w;
         let y = (i as usize / game.map_width) * cell_size + render_offset_h;
-        draw_rect(screen, x, y, x+cell_size, y+cell_size, &get_col(cell));
-    }
-
-    for light in &game.lights {
-        pixels_primitives::circle_filled(screen, WIDTH as i32,
-            light.pos.x * cell_size as f64 + render_offset.x,
-            light.pos.y * cell_size as f64 + render_offset.y,
-            cell_size as f64 / 3.0, &[0xFF, 0xFF, 0x00, 0xFF]);
+        draw_rect(screen, x, y, x+cell_size, y+cell_size, &get_col(cell.saturating_sub(1)));
     }
 
     pixels_primitives::circle_filled(screen, WIDTH as i32,

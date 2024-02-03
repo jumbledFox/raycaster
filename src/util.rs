@@ -109,7 +109,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
         
         // If we've found a tile at the map pos
         if let Some(tile) = game.map.get(x_pos.unwrap() + y_pos.unwrap() * game.map_width) {
-            if *tile != 0 {tile_found = true};
+            if *tile != 0 && *tile != 1 {tile_found = true};
         }
     }
     // For correcting bulge, instead of this method, which doesn't seem to work:
