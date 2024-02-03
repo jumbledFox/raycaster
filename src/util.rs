@@ -103,7 +103,6 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             end_pos.y >= 0.0 && end_pos.y < game.map_height as f64 {
                 if  end_pos.x.floor() as usize == x_pos.unwrap() && 
                 end_pos.y.floor() as usize == y_pos.unwrap() {
-                println!("{:?} end pos in map pos! {end_pos:?} {map_pos:?}", std::time::SystemTime::now());
                 return None
             }
         }
