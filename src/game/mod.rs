@@ -34,7 +34,7 @@ impl Game {
             }
         }
 
-        let lights: Vec<Light> = Vec::new();
+        let lights: Vec<Light> = vec![Light::new(Vector2::new(0.0, 0.0), 3.0)];
 
         Game {
             player: Player::new(),

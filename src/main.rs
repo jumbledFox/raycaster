@@ -124,20 +124,21 @@ fn main() {
             }
 
             // Light tests
-            if input.key_pressed(KeyCode::KeyR) {
-                g.lights.push(game::light::Light::new(g.player.pos, power));
-            }
-            if input.key_pressed(KeyCode::KeyT) {
-                g.lights.clear();
-            }
-            if input.key_pressed_os(KeyCode::KeyF) {
-                power += 1.0;
-                println!("POWER: {power:?}");
-            }
-            if input.key_pressed_os(KeyCode::KeyG) {
-                power -= 1.0;
-                println!("POWER: {power:?}");
-            }
+            // if input.key_pressed(KeyCode::KeyR) {
+            //     g.lights.push(game::light::Light::new(g.player.pos, power));
+            // }
+            // if input.key_pressed(KeyCode::KeyT) {
+            //     g.lights.clear();
+            // }
+            // if input.key_pressed_os(KeyCode::KeyF) {
+            //     power += 1.0;
+            //     println!("POWER: {power:?}");
+            // }
+            // if input.key_pressed_os(KeyCode::KeyG) {
+            //     power -= 1.0;
+            //     println!("POWER: {power:?}");
+            // }
+            g.lights[0].pos = g.player.pos;
 
             // Breaking blocks
             if input.mouse_pressed(0) && cursor_mode == CursorMode::Locked {
