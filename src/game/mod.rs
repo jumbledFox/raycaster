@@ -100,12 +100,6 @@ impl Game {
                 light_level -= 1;
             }
         }
-        for y in self.lightmap.chunks_exact(self.map_width) {
-            for x in y {
-                print!("{:02} ", x);
-            }
-            println!("");
-        }
     }
 
     pub fn coord_to_index(&self, c: &(usize, usize)) -> usize {
