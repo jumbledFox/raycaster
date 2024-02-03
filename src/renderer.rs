@@ -60,7 +60,25 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
                 color[2] = (color[2] as f32 * 0.7) as u8;
             }
 
-            let light_level = game.lightmap[cell];
+            // Find out the position of the cell in front of the current face, to get the lightmap info.
+            // We don't need to do any bounds checking here because the map should always be enclosed.
+            let offset: isize = match side {
+                RaycastSide::Y => {
+                    match ray_direction.y.is_sign_positive() {
+                        // If it's positive, get the lightmap ahead
+                        true  => { -(game.map_width as isize) },
+                        false => {   game.map_width as isize  },
+                    }
+                },
+                RaycastSide::X => {
+                    match ray_direction.x.is_sign_positive() {
+                        true  => { -1 },
+                        false => {  1 },
+                    }
+                },
+            };
+            
+            let light_level = game.lightmap[cell.saturating_add_signed(offset)];
             color[0] = (color[0] / 16) * (light_level + 1);
             color[1] = (color[1] / 16) * (light_level + 1);
             color[2] = (color[2] / 16) * (light_level + 1);
