@@ -3,6 +3,8 @@ pub mod player;
 use nalgebra::Vector2;
 use player::Player;
 
+use rand::Rng;
+
 use image;
 
 pub struct Game {
@@ -16,14 +18,24 @@ pub struct Game {
 }
 
 impl Game {
+    pub fn coord_to_index(&self, c: &(usize, usize)) -> usize {
+        c.1 * self.map_width + c.0
+    }
+    pub fn index_to_coord(&self, index: usize) -> (usize, usize) {
+        (index % self.map_width, index / self.map_width)
+    }
+
     pub fn new() -> Game {
-        // let im = image::open("res/tarkus.png").unwrap().to_rgba8();
-        // let im = image::open("res/example_img.png").unwrap().to_rgba8();
         let im = image::open("res/bricks.png").unwrap().to_rgba8();
         let texture: Vec<u8> = im.clone().into_raw();
 
-        let map_width = 15;
-        let map_height = 15;
+        let map_info = Game::load_map(String::from("res/map.png"));
+        let map = map_info.0;
+        let map_width  = map_info.1;
+        let map_height = map_info.2;
+        /*
+        let map_width  = 30;
+        let map_height = 30;
         let mut map = vec![0; map_width*map_height];
         // Add edges
         for (i, m) in map.iter_mut().enumerate() {
@@ -31,8 +43,21 @@ impl Game {
                 *m = 2;
             }
         }
-        // Add light
+        // Add lights
         map[map_width*2+2] = 1;
+        // Random lights
+        // for i in 0..map.len() {
+        //     if i < map_width || i > (map_width*map_height)-map_width { continue; }
+        //     if i % map_width == 0 || i % map_width == map_width - 1 { continue; }
+        //     let mut rng = rand::thread_rng();
+        //     map[i] = match rng.gen_range(0..10) == 0 {
+        //         true  => 1,
+        //         false => 0,
+        //     };
+        // }
+        // map[map_width*2+2] = 1;
+        // map[map_width*3-3] = 1;
+        */
 
         let mut g = Game {
             player: Player::new(),
@@ -45,16 +70,39 @@ impl Game {
         g
     }
 
+    fn load_map(image_path: String) -> (Vec<u8>, usize, usize) {
+        let im = image::open(image_path).unwrap().to_rgb8();
+        let width  = im.width()  as usize;
+        let height = im.height() as usize;
+        let mut map = vec![0; width*height];
+        for (i, p) in im.pixels().enumerate() {
+            map[i] = match p.0 {
+                [255, 255, 255] => 2,
+                [255, 255,   4] => 1,
+                [254,   0,   0] => 3,
+                [190, 190, 190] => 4,
+                _ => 0,
+            };
+            match p.0 {
+                [254,   0, 255] => {},
+                _ => {}
+            }
+        }
+        (map, width, height)
+    }
     pub fn calculate_lightmap(&mut self) {
         self.lightmap = vec![0; self.map_width*self.map_height];
-        // Find all light positions
+        // Find where all of the light are
         let light_positions: Vec<usize> = self.map.iter()
             .enumerate()
             .filter(|(_, item)| **item == 1)
             .map(|(index, _)| index)
             .collect();
+        // For each light in the scene
         for lp in light_positions {
+            // Flood fill routine
             let mut light_level = 16;
+            // TODO: Maybe use something like a hashset where each element is unique
             let mut done: Vec<usize> = vec![];
             let mut current_positions: Vec<usize> = vec![lp];
             let mut position_buffer  : Vec<usize> = vec![];
@@ -66,8 +114,10 @@ impl Game {
                     if done.contains(&index) { continue; }
                     else { done.push(*index); }
 
-                    // Set the light level
-                    self.lightmap[*index] = (self.lightmap[*index] + light_level).min(16);
+                    // Set the light level (if it's higher than the old one)
+                    if self.lightmap[*index] < light_level {
+                        self.lightmap[*index] = light_level;
+                    }
 
                     // Add all of the neighbours to the position buffer
                     let coord = self.index_to_coord(*index);
@@ -93,19 +143,12 @@ impl Game {
                 // Remove duplicates
                 position_buffer.sort_unstable();
                 position_buffer.dedup();
-                // Swap and clear buffers 
+                // Swap and clear buffers
                 position_buffer = std::mem::replace(&mut current_positions, position_buffer);
                 position_buffer.clear();
 
                 light_level -= 1;
             }
         }
-    }
-
-    pub fn coord_to_index(&self, c: &(usize, usize)) -> usize {
-        c.1 * self.map_width + c.0
-    }
-    pub fn index_to_coord(&self, index: usize) -> (usize, usize) {
-        (index % self.map_width, index / self.map_width)
     }
 }

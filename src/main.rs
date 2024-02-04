@@ -41,7 +41,7 @@ fn main() {
         //let scaled_size = LogicalSize::new(WIDTH as f64 * 2.0, HEIGHT as f64 * 2.0);
         WindowBuilder::new()
             .with_title("Raycasting :3")
-            .with_title("Raycasting")
+            // .with_title("Raycasting")
             .with_inner_size(size)
             .with_min_inner_size(size)
             .build(&event_loop)
@@ -70,7 +70,7 @@ fn main() {
                 WindowEvent::RedrawRequested => {
                     renderer::render_view(pixels.frame_mut(), &mut g, fov);
                     if render_map {
-                        renderer::render_map(pixels.frame_mut(), &mut g, 10);
+                        renderer::render_map(pixels.frame_mut(), &mut g, 4);
                     }
 
                     if let Err(err) = pixels.render() {
@@ -122,22 +122,6 @@ fn main() {
             if cursor_mode == CursorMode::Locked {
                 window.set_cursor_position(LogicalPosition::new(window.inner_size().width/2, window.inner_size().height/2));
             }
-
-            // Light tests
-            // if input.key_pressed(KeyCode::KeyR) {
-            //     g.lights.push(game::light::Light::new(g.player.pos, power));
-            // }
-            // if input.key_pressed(KeyCode::KeyT) {
-            //     g.lights.clear();
-            // }
-            // if input.key_pressed_os(KeyCode::KeyF) {
-            //     power += 1.0;
-            //     println!("POWER: {power:?}");
-            // }
-            // if input.key_pressed_os(KeyCode::KeyG) {
-            //     power -= 1.0;
-            //     println!("POWER: {power:?}");
-            // }
 
             // Breaking blocks
             if input.mouse_pressed(0) && cursor_mode == CursorMode::Locked {
