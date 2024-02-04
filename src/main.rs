@@ -84,7 +84,7 @@ fn main() {
             lasttime = Instant::now();
 
             door_open = (door_open + deltatime).rem(1.0);
-            println!("{:?}", door_open);
+            // println!("{:?}", door_open);
 
             // Exiting
             if input.key_pressed(KeyCode::Escape) || input.close_requested() {
@@ -127,7 +127,7 @@ fn main() {
 
             // Breaking blocks
             if input.mouse_pressed(0) && cursor_mode == CursorMode::Locked {
-                if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5) {
+                if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5, false) {
                     if !(cell % g.map_width == 0 || cell % g.map_width == g.map_width-1 ||
                          cell / g.map_width == 0 || cell / g.map_width == g.map_height-1) {
                         g.map[cell] = 0;
@@ -138,7 +138,7 @@ fn main() {
             // Placing blocks
             // This is a bit wonky lol
             if input.mouse_pressed(1) && cursor_mode == CursorMode::Locked {
-                if let Some((cell, pos, real_dist, side)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5) {
+                if let Some((cell, pos, real_dist, side)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5, false) {
                     // g.map[cell] = 0;
                     let mut c: usize = 0;
                     if side == util::RaycastSide::X {

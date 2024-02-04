@@ -23,7 +23,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
         // if w % 3 != 0 {continue;}
 
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
-        let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 500.0);
+        let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 500.0, w == WIDTH/2);
         if let Some((cell, hit_pos, distance, side)) = raycast_result {
             // Calculating heights
             let head_height = (game.player.head_bob_amount.sin() / distance) * 10.0;
@@ -78,10 +78,10 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
                 },
             };
             
-            let light_level = game.lightmap[cell.saturating_add_signed(offset)];
-            color[0] = (color[0] / 16) * (light_level + 1);
-            color[1] = (color[1] / 16) * (light_level + 1);
-            color[2] = (color[2] / 16) * (light_level + 1);
+            // let light_level = game.lightmap[cell.saturating_add_signed(offset)];
+            // color[0] = (color[0] / 16) * (light_level + 1);
+            // color[1] = (color[1] / 16) * (light_level + 1);
+            // color[2] = (color[2] / 16) * (light_level + 1);
             //if w == 0 {println!("{:?}  {:?}", color, light_level)};
 
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);

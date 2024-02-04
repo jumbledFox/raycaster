@@ -1,31 +1,44 @@
+use std::mem::swap;
+
 use nalgebra::Vector2;
 
 use crate::{WIDTH, game::Game};
 
 use rand::Rng;
 
+
+type RaycastResult = Option<(
+    usize,        // Index of cell it hit
+    Vector2<f64>, // Hit point
+    f64,          // Distance
+    RaycastSide   // Side
+)>;
+
+type CellResult = Option<(
+    usize,      // Index of cell found
+
+)>;
+
 #[derive(Debug, PartialEq)]
 pub enum RaycastSide { X, Y }
 
 // Shoots a raycast from a position and a direction and returns what it hit (as an index in the map),
 // the hit point, how far away it was, and if it hit x or y!
-pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64) -> Option<(usize, Vector2<f64>, f64, RaycastSide)> {
-    // If the ray is out of bounds, don't bother.
+pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64, tell_info: bool) -> Option<(usize, Vector2<f64>, f64, RaycastSide)> {
+    // If the ray is out of bounds, don't bother
     if  start_pos.x < 0.0 || start_pos.x > game.map_width  as f64 ||
         start_pos.y < 0.0 || start_pos.y > game.map_height as f64 {
         return None;
     }
-    // // DDA algorithm
-    // let ray_start = player_pos;
-    // let ray_dir = (player_dir + (cam_plane * 0.0)).normalize();
 
-    
-    // Where the ray will end
-    let end_pos = start_pos + dir * max_dist;
-    // Which box of the map we're in
-    let mut map_pos: Vector2<isize> = Vector2::new(
-        start_pos.x as isize,
-        start_pos.y as isize);
+    let dir = dir.normalize();
+
+    // Which cell of the map we're in
+    let mut map_pos: Vector2<usize> = Vector2::new(
+        start_pos.x as usize,
+        start_pos.y as usize);
+    // Which cell of the map we WILL be in next time
+    let mut next_map_pos = map_pos;
     // Accumulated columns and rows of the length of the ray, used to compare.
     let mut ray_length_1d = Vector2::new(0.0, 0.0);
     // 1 or -1 for each direction
@@ -36,6 +49,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
         f64::sqrt(1.0 + (dir.y / dir.x) * (dir.y / dir.x)),
         f64::sqrt(1.0 + (dir.x / dir.y) * (dir.x / dir.y)),
     );
+
     // Set step and calculate from position to first intersection point
     if dir.x < 0.0 {
         step_x = -1;
@@ -52,98 +66,92 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
         ray_length_1d.y = ((map_pos.y + 1) as f64 - start_pos.y) * step_size.y;
     }
 
+    let distance = 0.0f64;
+
+    // let next_pos = match ray_length_1d.x < ray_length_1d.y {
+    //     true  => {
+    //         map_pos.x = map_pos.x.saturating_add_signed(step_x);
+    //         ray_length_1d.x + step_size.x
+    //     }
+    //     false => {
+    //         map_pos.y = map_pos.y.saturating_add_signed(step_y);
+    //         ray_length_1d.y + step_size.y
+    //     }
+    // };
+
+    let mut current_pos = start_pos;
+    let mut next_pos;
+    // Move next_pos along the shortest axis
+    if ray_length_1d.x < ray_length_1d.y {
+        next_map_pos.x = next_map_pos.x.saturating_add_signed(step_x);
+        ray_length_1d.x += step_size.x;
+        next_pos = start_pos + dir * ray_length_1d.x;
+    } else {
+        next_map_pos.y = next_map_pos.y.saturating_add_signed(step_y); 
+        ray_length_1d.x += step_size.y;
+        next_pos = start_pos + dir * ray_length_1d.y;
+    }
+
+    // Check cell the player starts in
+    if let Some(..) = check_cell(game, *game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap(), current_pos, next_pos) {
+        return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), 0.01, RaycastSide::X));
+    }
+
+    swap(&mut current_pos, &mut next_pos);
+    swap(&mut map_pos, &mut next_map_pos);
+    
+    // Ok, the ray didn't hit anything in the cell we're currently in, let's do DDA
     let mut distance: f64 = 0.0;
-    let mut side = RaycastSide::X;
+    // let mut side = RaycastSide::X;
     
     let mut tile_found = false;
-    // // let mut out_of_bounds = false;
-
     while !tile_found && distance < max_dist {
-        // Move along either X or Y
+        // Move next_pos along the shortest axis
         if ray_length_1d.x < ray_length_1d.y {
-            map_pos.x += step_x;
             distance = ray_length_1d.x;
+
+            next_map_pos.x = next_map_pos.x.saturating_add_signed(step_x);
             ray_length_1d.x += step_size.x;
-            side = RaycastSide::X;
+            next_pos = start_pos + dir * ray_length_1d.x;
         } else {
-            map_pos.y += step_y;
             distance = ray_length_1d.y;
-            ray_length_1d.y += step_size.y;
-            side = RaycastSide::Y;
+
+            next_map_pos.y = next_map_pos.y.saturating_add_signed(step_y); 
+            ray_length_1d.x += step_size.y;
+            next_pos = start_pos + dir * ray_length_1d.y;
         }
-        // If out of bounds, stop checking
-        if  map_pos.x > game.map_width as isize - 1 || map_pos.y > game.map_height as isize - 1 ||
-            map_pos.x < 0 || map_pos.y < 0 {
-            break;
+        if let Some(c) = check_cell(game, *game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap(), current_pos, next_pos) {
+            return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), distance+c, RaycastSide::X));
         }
-        
-        // We know it's not out of bounds, so let's get where it is.
-        let x_pos: usize = map_pos.x.try_into().unwrap();
-        let y_pos: usize = map_pos.y.try_into().unwrap();
-        // TODO: Make this bit better
-        // If the end pos is in the map pos
-        if  end_pos.x >= 0.0 && end_pos.x < game.map_width as f64 &&
-            end_pos.y >= 0.0 && end_pos.y < game.map_height as f64 {
-                if  end_pos.x.floor() as usize == x_pos && 
-                    end_pos.y.floor() as usize == y_pos {
-                return None
-            }
-        }
-        
-        // // Depending on the tile 
-        let tile = *game.map.get(y_pos * game.map_width + x_pos).unwrap_or(&0);
-        // match tile {
-        //     // It's not solid, so we don't care
-        //     0 | 1 => (),
-        //     // It's a thin wall! We MIGHT have found a tile
-        //     5 | 6 => { 
-                
-        //     },
-        //     // Otherwise it must be solid
-        //     _ => tile_found = true,
-        // }
-        match tile {
-            // It's not solid, so we don't care
-            0 | 1 => (),
-            // It's a thin wall! We MIGHT have found a tile
-            6 => {
-                // Calculate the intersection point and distance for thin wall going from east to west
-                let intersection_x = map_pos.x as f64 + 0.5;  // Assuming thin wall is centered in the block
-                let intersection_y = start_pos.y + (intersection_x - start_pos.x) * (dir.y / dir.x);
-                let intersection_point = Vector2::new(intersection_x, intersection_y);
-                let distance = (intersection_point - start_pos).norm();
-                
-                if distance < max_dist {
-                    return Some((map_pos.y as usize * game.map_width + map_pos.x as usize, intersection_point, distance, RaycastSide::X));
-                }
-            },
-            5 => {
-                // Calculate the intersection point and distance for thin wall going from north to south
-                let intersection_y = map_pos.y as f64 + 0.5;  // Assuming thin wall is centered in the block
-                let intersection_x = start_pos.x + (intersection_y - start_pos.y) * (dir.x / dir.y);
-                let intersection_point = Vector2::new(intersection_x, intersection_y);
-                let distance = (intersection_point - start_pos).norm();
-                
-                if distance < max_dist {
-                    return Some((map_pos.y as usize * game.map_width + map_pos.x as usize, intersection_point, distance, RaycastSide::Y));
-                }
-            },
-            // Otherwise it must be solid
-            _ => tile_found = true,
-        }
-        
+        swap(&mut current_pos, &mut next_pos);
+        swap(&mut map_pos, &mut next_map_pos);
     }
     // For correcting bulge, instead of this method, which doesn't seem to work:
     // https://lodev.org/cgtutor/raycasting.html
     // i multiply the distance by cos of the angle, as shown here:
     // https://www.permadi.com/tutorial/raycast/rayc8.html
 
-    match tile_found && distance < max_dist {
-        true =>  {
-            let perp_dist = distance*dir.angle(&game.player.dir).cos();
-            Some((map_pos.y as usize * game.map_width + map_pos.x as usize, start_pos + dir*perp_dist, perp_dist, side))
-        }
-        false => None
-    }
+    // match tile_found && distance < max_dist {
+    //     true =>  {
+    //         let perp_dist = distance*dir.angle(&game.player.dir).cos();
+    //         Some((map_pos.y as usize * game.map_width + map_pos.x as usize, start_pos + dir*perp_dist, perp_dist, side))
+    //     }
+    //     false => None
+    // }
+    None
 }
 
+// Checks if a ray collided with the cell
+// Returns the distance of the collision from ray_start, as well as maybe how bright it should be or something.
+fn check_cell(game: &Game, cell: u8, ray_start: Vector2<f64>, ray_end: Vector2<f64>) -> Option<f64> {
+    match cell {
+        // Not solid
+        0 | 1 => None,
+        // Thin wall, E/W
+        6 => {
+            None
+        },
+        // Completely solid
+        _ => Some(0.00000001),
+    }
+}
