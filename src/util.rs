@@ -66,79 +66,51 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
         ray_length_1d.y = ((map_pos.y + 1) as f64 - start_pos.y) * step_size.y;
     }
 
-    let distance = 0.0f64;
-
-    // let next_pos = match ray_length_1d.x < ray_length_1d.y {
-    //     true  => {
-    //         map_pos.x = map_pos.x.saturating_add_signed(step_x);
-    //         ray_length_1d.x + step_size.x
-    //     }
-    //     false => {
-    //         map_pos.y = map_pos.y.saturating_add_signed(step_y);
-    //         ray_length_1d.y + step_size.y
-    //     }
-    // };
-
     let mut current_pos = start_pos;
-    let mut next_pos;
-    // Move next_pos along the shortest axis
-    if ray_length_1d.x < ray_length_1d.y {
-        next_map_pos.x = next_map_pos.x.saturating_add_signed(step_x);
-        ray_length_1d.x += step_size.x;
-        next_pos = start_pos + dir * ray_length_1d.x;
-    } else {
-        next_map_pos.y = next_map_pos.y.saturating_add_signed(step_y); 
-        ray_length_1d.x += step_size.y;
-        next_pos = start_pos + dir * ray_length_1d.y;
-    }
+    let mut next_pos = start_pos;
+    
+    // Set nextpos to be the shortest one
 
-    // Check cell the player starts in
-    if let Some(..) = check_cell(game, *game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap(), current_pos, next_pos) {
-        return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), 0.01, RaycastSide::X));
-    }
+    // // Check cell the player starts in
+    // if let Some(..) = check_cell(game, *game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap(), current_pos, next_pos) {
+    //     return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), 0.01, RaycastSide::X));
+    // }
 
-    swap(&mut current_pos, &mut next_pos);
-    swap(&mut map_pos, &mut next_map_pos);
+    // swap(&mut current_pos, &mut next_pos);
+    // map_pos = next_map_pos;
+
     
     // Ok, the ray didn't hit anything in the cell we're currently in, let's do DDA
     let mut distance: f64 = 0.0;
-    // let mut side = RaycastSide::X;
     
-    let mut tile_found = false;
-    while !tile_found && distance < max_dist {
+    while distance < max_dist {
+        // Check the cell
+        if let Some(c) = check_cell(game, *game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap(), current_pos, next_pos) {
+            // For correcting bulge, instead of this method, which doesn't seem to work:
+            // https://lodev.org/cgtutor/raycasting.html
+            // i multiply the distance by cos of the angle, as shown here:
+            // https://www.permadi.com/tutorial/raycast/rayc8.html
+            let perp_dist = (distance+c)*dir.angle(&game.player.dir).cos();
+            return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), perp_dist, RaycastSide::X));
+        }
+        // Swap
+        swap(&mut current_pos, &mut next_pos);
+        map_pos = next_map_pos;
         // Move next_pos along the shortest axis
         if ray_length_1d.x < ray_length_1d.y {
             distance = ray_length_1d.x;
 
-            next_map_pos.x = next_map_pos.x.saturating_add_signed(step_x);
             ray_length_1d.x += step_size.x;
             next_pos = start_pos + dir * ray_length_1d.x;
+            next_map_pos.x = next_map_pos.x.saturating_add_signed(step_x);
         } else {
             distance = ray_length_1d.y;
 
-            next_map_pos.y = next_map_pos.y.saturating_add_signed(step_y); 
             ray_length_1d.y += step_size.y;
             next_pos = start_pos + dir * ray_length_1d.y;
+            next_map_pos.y = next_map_pos.y.saturating_add_signed(step_y); 
         }
-        if let Some(c) = check_cell(game, *game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap(), current_pos, next_pos) {
-            let perp_dist = (distance+c)*dir.angle(&game.player.dir).cos();
-            return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), perp_dist, RaycastSide::X));
-        }
-        swap(&mut current_pos, &mut next_pos);
-        swap(&mut map_pos, &mut next_map_pos);
     }
-    // For correcting bulge, instead of this method, which doesn't seem to work:
-    // https://lodev.org/cgtutor/raycasting.html
-    // i multiply the distance by cos of the angle, as shown here:
-    // https://www.permadi.com/tutorial/raycast/rayc8.html
-
-    // match tile_found && distance < max_dist {
-    //     true =>  {
-    //         let perp_dist = distance*dir.angle(&game.player.dir).cos();
-    //         Some((map_pos.y as usize * game.map_width + map_pos.x as usize, start_pos + dir*perp_dist, perp_dist, side))
-    //     }
-    //     false => None
-    // }
     None
 }
 
