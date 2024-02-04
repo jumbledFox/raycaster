@@ -27,7 +27,7 @@ impl Game {
         let im = image::open("res/bricks.png").unwrap().to_rgba8();
         let texture: Vec<u8> = im.clone().into_raw();
 
-        let map_info = Game::load_map(String::from("res/map.png"));
+        let map_info = Game::load_map(String::from("res/map2.png"));
         let map = map_info.0;
         let map_width  = map_info.1;
         let map_height = map_info.2;

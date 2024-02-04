@@ -24,7 +24,7 @@ pub enum RaycastSide { X, Y }
 
 // Shoots a raycast from a position and a direction and returns what it hit (as an index in the map),
 // the hit point, how far away it was, and if it hit x or y!
-pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64, tell_info: bool) -> Option<(usize, Vector2<f64>, f64, RaycastSide)> {
+pub fn raycast(game: &mut Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64, tell_info: bool) -> Option<(usize, Vector2<f64>, f64, RaycastSide)> {
     // If the ray is out of bounds, don't bother
     if  start_pos.x < 0.0 || start_pos.x > game.map_width  as f64 ||
         start_pos.y < 0.0 || start_pos.y > game.map_height as f64 {
@@ -66,21 +66,19 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
         ray_length_1d.y = ((map_pos.y + 1) as f64 - start_pos.y) * step_size.y;
     }
 
+    // Start in the middle of the cell
     let mut current_pos = start_pos;
-    let mut next_pos = start_pos;
-    
-    // Set nextpos to be the shortest one
-
-    // // Check cell the player starts in
-    // if let Some(..) = check_cell(game, *game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap(), current_pos, next_pos) {
-    //     return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), 0.01, RaycastSide::X));
+    // Go to the next cell
+    let mut next_pos = match ray_length_1d.x < ray_length_1d.y {
+        true  => start_pos + dir * ray_length_1d.x,
+        false => start_pos + dir * ray_length_1d.y,
+    };
+    // if ray_length_1d.x < ray_length_1d.y {
+    //     next_map_pos.x = next_map_pos.x.saturating_add_signed(step_x);
+    // } else {
+    //     next_map_pos.y = next_map_pos.y.saturating_add_signed(step_y);
     // }
-
-    // swap(&mut current_pos, &mut next_pos);
-    // map_pos = next_map_pos;
-
     
-    // Ok, the ray didn't hit anything in the cell we're currently in, let's do DDA
     let mut distance: f64 = 0.0;
     
     while distance < max_dist {
@@ -91,11 +89,14 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             // i multiply the distance by cos of the angle, as shown here:
             // https://www.permadi.com/tutorial/raycast/rayc8.html
             let perp_dist = (distance+c)*dir.angle(&game.player.dir).cos();
+            if tell_info {
+                println!("[{:.2}, {:.2}]   [{:.2}, {:.2}]", current_pos.x, current_pos.y, next_pos.x, next_pos.y);
+                game.player.lineposa = current_pos;
+                game.player.lineposb = Vector2::zeros();
+            }
             return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), perp_dist, RaycastSide::X));
         }
-        // Swap
-        swap(&mut current_pos, &mut next_pos);
-        map_pos = next_map_pos;
+
         // Move next_pos along the shortest axis
         if ray_length_1d.x < ray_length_1d.y {
             distance = ray_length_1d.x;
@@ -110,21 +111,31 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             next_pos = start_pos + dir * ray_length_1d.y;
             next_map_pos.y = next_map_pos.y.saturating_add_signed(step_y); 
         }
+
+        // TODO: Understand why we do it in this order
+        // Swap
+        swap(&mut current_pos, &mut next_pos);
+        map_pos = next_map_pos;
     }
     None
 }
 
 // Checks if a ray collided with the cell
 // Returns the distance of the collision from ray_start, as well as maybe how bright it should be or something.
+// This function lets us calculate if a line intersected with an arbitrary shape!
 fn check_cell(game: &Game, cell: u8, ray_start: Vector2<f64>, ray_end: Vector2<f64>) -> Option<f64> {
     match cell {
         // Not solid
         0 | 1 => None,
         // Thin wall, E/W
+        5 => {
+            Some(0.5)
+        }
+        // Thin wall, N/S
         6 => {
-            None
+            Some(0.5)
         },
         // Completely solid
-        _ => Some(0.00000001),
+        _ => Some(0.000000000000001),
     }
 }

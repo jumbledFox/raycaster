@@ -16,14 +16,14 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
     let middle = (((HEIGHT/2) as f64 - game.player.pitch) as usize).min(HEIGHT as usize-1);
     draw_rect(screen, 0, 0,      WIDTH as usize, middle,            &[ 26,  28,  44, 0xFF]);
     draw_rect(screen, 0, middle, WIDTH as usize, HEIGHT as usize,   &[ 51,  60,  87, 0xFF]);
-
+    
     // TODO: make it so no-matter the aspect ratio, the map is always cubes
     // for i in 0..100 {
     for w in 0..WIDTH {
         // if w % 3 != 0 {continue;}
 
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
-        let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 500.0, w == WIDTH/2);
+        let raycast_result = util::raycast(game, game.player.pos, ray_direction, 500.0, w == WIDTH/2);
         if let Some((cell, hit_pos, distance, side)) = raycast_result {
             // Calculating heights
             let head_height = (game.player.head_bob_amount.sin() / distance) * 10.0;
@@ -126,6 +126,19 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
     let render_offset_h = HEIGHT_USIZE / 2 - (game.map_height * cell_size) / 2;
     let render_offset = Vector2::new(render_offset_w as f64, render_offset_h as f64);
     let map_size = Vector2::new((game.map_width * cell_size) as f64, (game.map_height * cell_size) as f64);
+
+    for i in 0..game.map_width {
+        draw_line(screen,
+        Vector2::new((i*cell_size) as f64, 0.0) + render_offset,
+        Vector2::new((i*cell_size) as f64, (game.map_height * cell_size) as f64) + render_offset,
+        &[0xAA, 0xAA, 0xAA, 0xFF]);
+    }
+    for i in 0..game.map_height {
+        draw_line(screen,
+        Vector2::new(0.0, (i*cell_size) as f64) + render_offset,
+        Vector2::new((game.map_width * cell_size) as f64, (i*cell_size) as f64) + render_offset,
+        &[0xAA, 0xAA, 0xAA, 0xFF]);
+    }
 
     for (i, &cell) in game.map.iter().enumerate() {
         if cell == 0 { continue; }
