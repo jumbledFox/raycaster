@@ -117,11 +117,12 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             distance = ray_length_1d.y;
 
             next_map_pos.y = next_map_pos.y.saturating_add_signed(step_y); 
-            ray_length_1d.x += step_size.y;
+            ray_length_1d.y += step_size.y;
             next_pos = start_pos + dir * ray_length_1d.y;
         }
         if let Some(c) = check_cell(game, *game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap(), current_pos, next_pos) {
-            return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), distance+c, RaycastSide::X));
+            let perp_dist = (distance+c)*dir.angle(&game.player.dir).cos();
+            return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), perp_dist, RaycastSide::X));
         }
         swap(&mut current_pos, &mut next_pos);
         swap(&mut map_pos, &mut next_map_pos);
