@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{ops::Rem, time::Instant};
 
 use game::Game;
 use winit::{
@@ -61,14 +61,13 @@ fn main() {
     let mut g = Game::new();
     let mut render_map = false;
 
-    let mut power = 2.0;
+    let mut door_open = 0.0;
 
-    let mut fov = 2.0;
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
             match event {
                 WindowEvent::RedrawRequested => {
-                    renderer::render_view(pixels.frame_mut(), &mut g, fov);
+                    renderer::render_view(pixels.frame_mut(), &mut g, 2.0);
                     if render_map {
                         renderer::render_map(pixels.frame_mut(), &mut g, 4);
                     }
@@ -83,6 +82,9 @@ fn main() {
         if input.update(&event) {
             deltatime = lasttime.elapsed().as_secs_f64();
             lasttime = Instant::now();
+
+            door_open = (door_open + deltatime).rem(1.0);
+            println!("{:?}", door_open);
 
             // Exiting
             if input.key_pressed(KeyCode::Escape) || input.close_requested() {
@@ -179,8 +181,9 @@ fn main() {
                 g.player.dir = na::Rotation2::new(r) * g.player.dir;
                 if input.key_held(KeyCode::ArrowUp)   { g.player.pitch += 1.0; }
                 if input.key_held(KeyCode::ArrowDown) { g.player.pitch -= 1.0; }
+                // println!("{:?}", g.player.pitch);
 
-                g.player.pitch = (g.player.pitch + input.mouse_diff().1 as f64 / 2.0).clamp(-150.0, 150.0);
+                g.player.pitch = (g.player.pitch + input.mouse_diff().1 as f64 / 2.0).clamp(-121.0, 121.0);
             }
 
             // Redraw

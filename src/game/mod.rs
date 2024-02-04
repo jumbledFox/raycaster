@@ -3,8 +3,6 @@ pub mod player;
 use nalgebra::Vector2;
 use player::Player;
 
-use rand::Rng;
-
 use image;
 
 pub struct Game {
@@ -77,10 +75,12 @@ impl Game {
         let mut map = vec![0; width*height];
         for (i, p) in im.pixels().enumerate() {
             map[i] = match p.0 {
-                [255, 255, 255] => 2,
-                [255, 255,   4] => 1,
-                [254,   0,   0] => 3,
-                [190, 190, 190] => 4,
+                [255, 255, 255] => 2, // wall
+                [255, 255,   4] => 1, // light
+                [254,   0,   0] => 3, // wall - red
+                [190, 190, 190] => 4, // wall - orange
+                [  4, 126,   0] => 5, // thin wall -
+                [  6, 255,   4] => 6, // thin wall |
                 _ => 0,
             };
             match p.0 {
@@ -90,6 +90,9 @@ impl Game {
         }
         (map, width, height)
     }
+
+    // TODO: Maybe implement something like this:
+    // https://www.reddit.com/r/Minecraft/comments/8swb5s/comment/e13uu9m/?utm_source=share&utm_medium=web2x&context=3
     pub fn calculate_lightmap(&mut self) {
         self.lightmap = vec![0; self.map_width*self.map_height];
         // Find where all of the light are
@@ -132,10 +135,11 @@ impl Game {
                             { continue; }
 
                         let neighbour_index = self.coord_to_index(&(n_x.unwrap(), n_y.unwrap()));
-                        // Skip if the neighbour is solid
-                        if self.map[neighbour_index] != 0 && self.map[neighbour_index] != 1 {
-                            continue;
-                        }
+                        // Skip if the neighbour is solid (or a thin wall)
+                        match self.map[neighbour_index] {
+                            0 | 1 | 5 | 6 => (),
+                            _ => continue
+                        };
                         // Add to position buffer (may contain duplicates, so we'll have to deal with that later)
                         position_buffer.push(neighbour_index);
                     }

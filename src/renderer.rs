@@ -26,7 +26,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
         let raycast_result = util::raycast(&game, game.player.pos, ray_direction, 500.0);
         if let Some((cell, hit_pos, distance, side)) = raycast_result {
             // Calculating heights
-            let head_height = 0.0;//(game.player.head_bob_amount.sin() / distance) * 10.0;
+            let head_height = (game.player.head_bob_amount.sin() / distance) * 10.0;
 
             // let h = HEIGHT as f64;
             // let lineheight = (h / distance);// * (1.0/ASPECT_RATIO);

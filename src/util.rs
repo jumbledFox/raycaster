@@ -2,6 +2,8 @@ use nalgebra::Vector2;
 
 use crate::{WIDTH, game::Game};
 
+use rand::Rng;
+
 #[derive(Debug, PartialEq)]
 pub enum RaycastSide { X, Y }
 
@@ -69,48 +71,67 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             ray_length_1d.y += step_size.y;
             side = RaycastSide::Y;
         }
-
-        // if  start_pos.x < 0.0 || start_pos.x.ceil() >= game.map_width  as f64 || 
-        //     start_pos.y < 0.0 || start_pos.y.ceil() >= game.map_height as f64 {
-        //     continue;
-        // }
-
-
-        // check_points.push(ray_start + (ray_dir * distance));
-
-
-        // let map_x = ray.pos.x.floor() as usize;
-        // let map_y = ray.pos.y.floor() as (Hello) usize;
-        // TODO: bounds checking and tidy up
-        // if map_pos.x > MAP_WIDTH+1 || map_pos.y > MAP_HEIGHT+1 {
-        //     continue;
-        // }
-        
-        // map_pos.x = map_pos.x.rem_euclid(game.map_width as isize);
-        // map_pos.y = map_pos.y.rem_euclid(game.map_height as isize);
-
+        // If out of bounds, stop checking
         if  map_pos.x > game.map_width as isize - 1 || map_pos.y > game.map_height as isize - 1 ||
             map_pos.x < 0 || map_pos.y < 0 {
             break;
         }
         
-        // Maybe if i optimise this it'll be a lot faster
-        let x_pos: Result<usize, _> = map_pos.x.try_into();
-        let y_pos: Result<usize, _> = map_pos.y.try_into();
-        if x_pos.is_err() || y_pos.is_err() { continue; }
+        // We know it's not out of bounds, so let's get where it is.
+        let x_pos: usize = map_pos.x.try_into().unwrap();
+        let y_pos: usize = map_pos.y.try_into().unwrap();
+        // TODO: Make this bit better
         // If the end pos is in the map pos
         if  end_pos.x >= 0.0 && end_pos.x < game.map_width as f64 &&
             end_pos.y >= 0.0 && end_pos.y < game.map_height as f64 {
-                if  end_pos.x.floor() as usize == x_pos.unwrap() && 
-                end_pos.y.floor() as usize == y_pos.unwrap() {
+                if  end_pos.x.floor() as usize == x_pos && 
+                    end_pos.y.floor() as usize == y_pos {
                 return None
             }
         }
         
-        // If we've found a tile at the map pos
-        if let Some(tile) = game.map.get(x_pos.unwrap() + y_pos.unwrap() * game.map_width) {
-            if *tile != 0 && *tile != 1 {tile_found = true};
+        // // Depending on the tile 
+        let tile = *game.map.get(y_pos * game.map_width + x_pos).unwrap_or(&0);
+        // match tile {
+        //     // It's not solid, so we don't care
+        //     0 | 1 => (),
+        //     // It's a thin wall! We MIGHT have found a tile
+        //     5 | 6 => { 
+                
+        //     },
+        //     // Otherwise it must be solid
+        //     _ => tile_found = true,
+        // }
+        match tile {
+            // It's not solid, so we don't care
+            0 | 1 => (),
+            // It's a thin wall! We MIGHT have found a tile
+            6 => {
+                // Calculate the intersection point and distance for thin wall going from east to west
+                let intersection_x = map_pos.x as f64 + 0.5;  // Assuming thin wall is centered in the block
+                let intersection_y = start_pos.y + (intersection_x - start_pos.x) * (dir.y / dir.x);
+                let intersection_point = Vector2::new(intersection_x, intersection_y);
+                let distance = (intersection_point - start_pos).norm();
+                
+                if distance < max_dist {
+                    return Some((map_pos.y as usize * game.map_width + map_pos.x as usize, intersection_point, distance, RaycastSide::X));
+                }
+            },
+            5 => {
+                // Calculate the intersection point and distance for thin wall going from north to south
+                let intersection_y = map_pos.y as f64 + 0.5;  // Assuming thin wall is centered in the block
+                let intersection_x = start_pos.x + (intersection_y - start_pos.y) * (dir.x / dir.y);
+                let intersection_point = Vector2::new(intersection_x, intersection_y);
+                let distance = (intersection_point - start_pos).norm();
+                
+                if distance < max_dist {
+                    return Some((map_pos.y as usize * game.map_width + map_pos.x as usize, intersection_point, distance, RaycastSide::Y));
+                }
+            },
+            // Otherwise it must be solid
+            _ => tile_found = true,
         }
+        
     }
     // For correcting bulge, instead of this method, which doesn't seem to work:
     // https://lodev.org/cgtutor/raycasting.html
