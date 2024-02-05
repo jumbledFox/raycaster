@@ -24,7 +24,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
         let raycast_result = util::raycast(game, game.player.pos, ray_direction, 500.0, w == WIDTH/2);
-        if let Some((cell, hit_pos, distance, side)) = raycast_result {
+        if let Some((cell, hit_pos, distance, texture_along, side)) = raycast_result {
             // Calculating heights
             let head_height = (game.player.head_bob_amount.sin() / distance) * 10.0;
 
@@ -44,10 +44,10 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
             // Texture shiz
             // How far along the texture is
-            let along = match side {
-                util::RaycastSide::X => hit_pos.y,
-                util::RaycastSide::Y => hit_pos.x,
-            }.rem_euclid(1.0);
+            // let along = match side {
+            //     util::RaycastSide::X => hit_pos.y,
+            //     util::RaycastSide::Y => hit_pos.x,
+            // }.rem_euclid(1.0);
             //if w != WIDTH / 2 {println!("{:?}", along)}
             //let mut color = game.texture[(along * game.texture_size.0 as f64) as usize + game.texture_size.0*5];
             //println!("{:?}", along);
@@ -85,7 +85,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             //if w == 0 {println!("{:?}  {:?}", color, light_level)};
 
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
-            draw_slice(screen, game, w as usize, along, draw_start, draw_end, &color);
+            draw_slice(screen, game, w as usize, texture_along, draw_start, draw_end, &color);
 
             if w == WIDTH / 2 { game.player.mid_ray_dist = distance }
         }

@@ -11,6 +11,7 @@ type RaycastResult = Option<(
     usize,        // Index of cell it hit
     Vector2<f64>, // Hit point
     f64,          // Distance
+    f64,          // Texture along
     RaycastSide   // Side
 )>;
 
@@ -24,7 +25,7 @@ pub enum RaycastSide { X, Y }
 
 // Shoots a raycast from a position and a direction and returns what it hit (as an index in the map),
 // the hit point, how far away it was, and if it hit x or y!
-pub fn raycast(game: &mut Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64, tell_info: bool) -> Option<(usize, Vector2<f64>, f64, RaycastSide)> {
+pub fn raycast(game: &mut Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64, tell_info: bool) -> RaycastResult {
     // If the ray is out of bounds, don't bother
     if  start_pos.x < 0.0 || start_pos.x > game.map_width  as f64 ||
         start_pos.y < 0.0 || start_pos.y > game.map_height as f64 {
@@ -83,18 +84,18 @@ pub fn raycast(game: &mut Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_
     
     while distance < max_dist {
         // Check the cell
-        if let Some(c) = check_cell(game, *game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap(), current_pos, next_pos) {
+        if let Some((d, along)) = check_cell(game, *game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap(), current_pos, next_pos) {
             // For correcting bulge, instead of this method, which doesn't seem to work:
             // https://lodev.org/cgtutor/raycasting.html
             // i multiply the distance by cos of the angle, as shown here:
             // https://www.permadi.com/tutorial/raycast/rayc8.html
-            let perp_dist = (distance+c)*dir.angle(&game.player.dir).cos();
+            let perp_dist = (distance+d)*dir.angle(&game.player.dir).cos();
             if tell_info {
                 println!("[{:.2}, {:.2}]   [{:.2}, {:.2}]", current_pos.x, current_pos.y, next_pos.x, next_pos.y);
                 game.player.lineposa = current_pos;
                 game.player.lineposb = Vector2::zeros();
             }
-            return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), perp_dist, RaycastSide::X));
+            return Some((game.coord_to_index(&(map_pos.x, map_pos.y)), Vector2::zeros(), perp_dist, along, RaycastSide::X));
         }
 
         // Move next_pos along the shortest axis
@@ -121,21 +122,23 @@ pub fn raycast(game: &mut Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_
 }
 
 // Checks if a ray collided with the cell
-// Returns the distance of the collision from ray_start, as well as maybe how bright it should be or something.
+// Returns the distance of the collision from ray_start, plus texture info, as well as maybe how bright it should be or something.
 // This function lets us calculate if a line intersected with an arbitrary shape!
-fn check_cell(game: &Game, cell: u8, ray_start: Vector2<f64>, ray_end: Vector2<f64>) -> Option<f64> {
+fn check_cell(game: &Game, cell: u8, ray_start: Vector2<f64>, ray_end: Vector2<f64>) -> Option<(f64, f64)> {
     match cell {
         // Not solid
         0 | 1 => None,
         // Thin wall, E/W
         5 => {
-            Some(0.5)
+            Some((0.5, ray_start.x.rem_euclid(1.0)))
         }
         // Thin wall, N/S
         6 => {
-            Some(0.5)
+            Some((0.5, 0.5))
         },
         // Completely solid
-        _ => Some(0.000000000000001),
+        _ => Some((0.000000000000001,
+            ray_end.x.rem_euclid(1.0)
+        )),
     }
 }
