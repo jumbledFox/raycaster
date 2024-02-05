@@ -1,4 +1,4 @@
-use std::{mem::swap, ops::Rem};
+use std::mem::swap;
 
 use nalgebra::Vector2;
 
@@ -84,7 +84,7 @@ pub fn raycast(game: &mut Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_
     
     while distance < max_dist {
         // Check the cell
-        if let Some((d, along)) = check_cell(*game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap_or(&0), current_pos, next_pos) {
+        if let Some((d, along)) = check_cell(game, *game.map.get(game.coord_to_index(&(map_pos.x, map_pos.y))).unwrap_or(&0), current_pos, next_pos) {
             // For correcting bulge, instead of this method, which doesn't seem to work:
             // https://lodev.org/cgtutor/raycasting.html
             // i multiply the distance by cos of the angle, as shown here:
@@ -124,31 +124,21 @@ pub fn raycast(game: &mut Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_
 // Checks if a ray collided with the cell
 // Returns the distance of the collision from ray_start, plus texture info, as well as maybe how bright it should be or something.
 // This function lets us calculate if a line intersected with an arbitrary shape!
-fn check_cell(cell: u8, ray_start: Vector2<f64>, ray_end: Vector2<f64>) -> Option<(f64, f64)> {
-    let distance: f64;
-    let texture_along: f64;
-    let brightness: f64;
+fn check_cell(game: &Game, cell: u8, ray_start: Vector2<f64>, ray_end: Vector2<f64>) -> Option<(f64, f64)> {
     match cell {
         // Not solid
-        0 | 1 => return None,
+        0 | 1 => None,
         // Thin wall, E/W
         5 => {
-            distance = 0.5;
-            texture_along = ray_start.x.rem_euclid(1.0);
-            brightness = 0.5;
+            Some((0.5, ray_start.x.rem_euclid(1.0)))
         }
         // Thin wall, N/S
         6 => {
-            distance = 0.5;
-            texture_along = ray_start.x.rem_euclid(1.0);
-            brightness = 0.5;
-        }
+            Some((0.5, 0.5))
+        },
         // Completely solid
-        _ => {
-            distance = 0.000000000000001;
-            texture_along = ray_start.x.rem_euclid(1.0);
-            brightness = 1.0;
-        }
+        _ => Some((0.000000000000001,
+            ray_start.x.rem_euclid(1.0)
+        )),
     }
-    Some((distance, texture_along))
 }

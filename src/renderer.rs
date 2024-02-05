@@ -146,6 +146,7 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
         let y = (i as usize / game.map_width) * cell_size + render_offset_h;
         draw_rect(screen, x, y, x+cell_size, y+cell_size, &get_col(cell.saturating_sub(1)));
     }
+    
 
     pixels_primitives::circle_filled(screen, WIDTH as i32,
         game.player.pos.x.clamp(0.0, game.map_width  as f64) * cell_size as f64 + render_offset.x,
@@ -159,6 +160,14 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
         game.player.lineposa * cell_size as f64 + render_offset,
         game.player.lineposb * cell_size as f64 + render_offset,
         &[0xFF, 0x00, 0xFF, 0xFF]);
+    pixels_primitives::circle_filled(screen, WIDTH as i32,
+        game.player.lineposa.x.clamp(0.0, game.map_width  as f64) * cell_size as f64 + render_offset.x,
+        game.player.lineposa.y.clamp(0.0, game.map_height as f64) * cell_size as f64 + render_offset.y,
+        cell_size as f64 / 3.0, &[0xFF, 0x00, 0x00, 0xFF]);
+    pixels_primitives::circle_filled(screen, WIDTH as i32,
+        game.player.lineposb.x.clamp(0.0, game.map_width  as f64) * cell_size as f64 + render_offset.x,
+        game.player.lineposb.y.clamp(0.0, game.map_height as f64) * cell_size as f64 + render_offset.y,
+        cell_size as f64 / 3.0, &[0x00, 0x00, 0xFF, 0xFF]);
 }
 
 // A neater way of invoking pixels_primitves functions
