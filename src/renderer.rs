@@ -1,6 +1,6 @@
 use std::{f64::consts::PI, ops::Add};
 
-use crate::{WIDTH, HEIGHT, WIDTH_USIZE, HEIGHT_USIZE, na, Vector2, util::{self, RaycastSide}, game::{Game, player}, ASPECT_RATIO};
+use crate::{WIDTH, HEIGHT, WIDTH_USIZE, HEIGHT_USIZE, na, Vector2, util::{self}, game::{Game, player}, ASPECT_RATIO};
 
 use lerp::num_traits::CheckedShr;
 use na::coordinates::X;
@@ -24,7 +24,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
         let raycast_result = util::raycast(game, game.player.pos, ray_direction, 500.0, w == WIDTH/2);
-        if let Some((cell, hit_pos, distance, texture_along, side)) = raycast_result {
+        if let Some((cell, distance, texture_along, b)) = raycast_result {
             // Calculating heights
             let head_height = (game.player.head_bob_amount.sin() / distance) * 10.0;
 
@@ -54,29 +54,29 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
             // Color stuff
             let mut color = get_col(game.map[cell]-1);
-            if side == util::RaycastSide::Y {
-                color[0] = (color[0] as f32 * 0.7) as u8;
-                color[1] = (color[1] as f32 * 0.7) as u8;
-                color[2] = (color[2] as f32 * 0.7) as u8;
-            }
+            // if side == util::RaycastSide::Y {
+            //     color[0] = (color[0] as f32 * 0.7) as u8;
+            //     color[1] = (color[1] as f32 * 0.7) as u8;
+            //     color[2] = (color[2] as f32 * 0.7) as u8;
+            // }
 
             // Find out the position of the cell in front of the current face, to get the lightmap info.
             // We don't need to do any bounds checking here because the map should always be enclosed.
-            let offset: isize = match side {
-                RaycastSide::Y => {
-                    match ray_direction.y.is_sign_positive() {
-                        // If it's positive, get the lightmap ahead
-                        true  => { -(game.map_width as isize) },
-                        false => {   game.map_width as isize  },
-                    }
-                },
-                RaycastSide::X => {
-                    match ray_direction.x.is_sign_positive() {
-                        true  => { -1 },
-                        false => {  1 },
-                    }
-                },
-            };
+            // let offset: isize = match side {
+            //     RaycastSide::Y => {
+            //         match ray_direction.y.is_sign_positive() {
+            //             // If it's positive, get the lightmap ahead
+            //             true  => { -(game.map_width as isize) },
+            //             false => {   game.map_width as isize  },
+            //         }
+            //     },
+            //     RaycastSide::X => {
+            //         match ray_direction.x.is_sign_positive() {
+            //             true  => { -1 },
+            //             false => {  1 },
+            //         }
+            //     },
+            // };
             
             // let light_level = game.lightmap[cell.saturating_add_signed(offset)];
             // color[0] = (color[0] / 16) * (light_level + 1);

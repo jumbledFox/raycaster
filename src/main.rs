@@ -178,7 +178,7 @@ fn main() {
                 r += input.mouse_diff().0 as f64 / 10.0;
                 // window.set_cursor_position(LogicalPosition::new(WIDTH, HEIGHT));
                 r *= 0.035;
-                g.player.dir = na::Rotation2::new(r) * g.player.dir;
+                g.player.dir = (na::Rotation2::new(r) * g.player.dir).normalize();
                 if input.key_held(KeyCode::ArrowUp)   { g.player.pitch += 1.0; }
                 if input.key_held(KeyCode::ArrowDown) { g.player.pitch -= 1.0; }
                 // println!("{:?}", g.player.pitch);

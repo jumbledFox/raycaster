@@ -16,8 +16,8 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn coord_to_index(&self, c: &(usize, usize)) -> usize {
-        c.1 * self.map_width + c.0
+    pub fn coord_to_index(&self, x: &usize, y: &usize) -> usize {
+        y * self.map_width + x
     }
     pub fn index_to_coord(&self, index: usize) -> (usize, usize) {
         (index % self.map_width, index / self.map_width)
@@ -134,7 +134,7 @@ impl Game {
                             n_y.is_some_and(|j| j >= self.map_height)
                             { continue; }
 
-                        let neighbour_index = self.coord_to_index(&(n_x.unwrap(), n_y.unwrap()));
+                        let neighbour_index = self.coord_to_index(&n_x.unwrap(), &n_y.unwrap());
                         // Skip if the neighbour is solid (or a thin wall)
                         match self.map[neighbour_index] {
                             0 | 1 | 5 | 6 => (),
