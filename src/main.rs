@@ -38,11 +38,11 @@ fn main() {
 
     let window = {
         let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
-        //let scaled_size = LogicalSize::new(WIDTH as f64 * 2.0, HEIGHT as f64 * 2.0);
+        let scaled_size = LogicalSize::new(WIDTH as f64 * 2.0, HEIGHT as f64 * 2.0);
         WindowBuilder::new()
             .with_title("Raycasting :3")
             // .with_title("Raycasting")
-            .with_inner_size(size)
+            .with_inner_size(scaled_size)
             .with_min_inner_size(size)
             .build(&event_loop)
             .unwrap()

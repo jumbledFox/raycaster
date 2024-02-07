@@ -52,6 +52,8 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
     // Set initially to a very small value to avoid division by zero in other functions. (Namely render_view())
     let mut distance: f64 = 0.000000000001;
 
+    let mut side = 0;
+
     loop {
         // Get the tile at the current position, check it out
         let tile_index = game.coord_to_index(&map_pos.x, &map_pos.y);
@@ -74,7 +76,18 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
                 // Calculate the perpendicular distance
                 // https://www.permadi.com/tutorial/raycast/rayc8.html
                 let perp_dist = distance*dir.angle(&game.player.dir).cos();
-                return Some((tile_index, perp_dist, 0.5, 255));
+                if tell_info {
+                    println!("{:?} {:?}", start_pos + distance * dir, ray_length_1d.x < ray_length_1d.y);
+                }
+                let texture_along: f64;
+                // TODO: Store sides and use them to determine this :3
+                if side == 0 {
+                    texture_along = (start_pos + perp_dist * dir).y.rem_euclid(1.0);
+                } else {
+                    texture_along = (start_pos + perp_dist * dir).x.rem_euclid(1.0);
+                }
+                
+                return Some((tile_index, perp_dist, texture_along, 255));
             }
         }
 
@@ -88,6 +101,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             distance = ray_length_1d.x;
             // Step 1 along the X axis to the next intersection
             ray_length_1d.x += step_size.x;
+            side = 0;
         } else {
             // If map_pos goes below zero, it's obviously not gonna hit anything.
             if let Some(t) = map_pos.y.checked_add_signed(step_y) {
@@ -97,6 +111,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             distance = ray_length_1d.y;
             // Step 1 along the Y axis to the next intersection
             ray_length_1d.y += step_size.y;
+            side = 1;
         }
         // If out of bounds, stop checking
         if map_pos.x > game.map_width || map_pos.y > game.map_height { break; }
