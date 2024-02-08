@@ -55,21 +55,38 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
     let mut side = 0;
 
     loop {
+        // If out of bounds, stop checking
+        if map_pos.x >= game.map_width || map_pos.y >= game.map_height { break; }
+
+        // If the distance is too large, stop checking
+        if distance > max_dist { break; }
+
         // Get the tile at the current position, check it out
         let tile_index = game.coord_to_index(&map_pos.x, &map_pos.y);
         let tile = game.map.get(tile_index).unwrap();
         match *tile {
             // Air | Light
             0 | 1 => {}
-            // Thin wall N/S
+            // Diagonal
             5 => {
+                if side == 0 {
+                    let perp_dist = distance*dir.angle(&game.player.dir).cos();
+                    return Some((tile_index, perp_dist, 0.7, 255));
+                }
+            }
+            // Thin wall N/S
+            6 => {
                 let perp_dist = distance*dir.angle(&game.player.dir).cos();
                 return Some((tile_index, perp_dist, 0.7, 255));
             }
+
             // Pillar
             7 => {
                 // See if the 
                 // let current_pos = 
+
+                let perp_dist = distance*dir.angle(&game.player.dir).cos();
+                return Some((tile_index, perp_dist, 0.2, 255))
             }
             // Otherwise...
             _ => {
@@ -113,11 +130,6 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             ray_length_1d.y += step_size.y;
             side = 1;
         }
-        // If out of bounds, stop checking
-        if map_pos.x > game.map_width || map_pos.y > game.map_height { break; }
-
-        // If the distance is too large, stop checking
-        if distance > max_dist { break; }
     }
 
     None

@@ -81,6 +81,7 @@ impl Game {
                 [190, 190, 190] => 4, // wall - orange
                 [  4, 126,   0] => 5, // thin wall -
                 [  6, 255,   4] => 6, // thin wall |
+                [0xff, 0x00, 0xdc] => 7, // Cylinder
                 _ => 0,
             };
             match p.0 {

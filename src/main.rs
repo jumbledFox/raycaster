@@ -173,14 +173,14 @@ fn main() {
             // Only rotate if the mouse is locked
             if cursor_mode == CursorMode::Locked {
                 let mut r: f64 = 0.0;
-                if input.key_held(KeyCode::ArrowLeft)  { r -= 1.0; }
-                if input.key_held(KeyCode::ArrowRight) { r += 1.0; }
+                if input.key_held(KeyCode::ArrowLeft)  { r -= 3.0; }
+                if input.key_held(KeyCode::ArrowRight) { r += 3.0; }
                 r += input.mouse_diff().0 as f64 / 10.0;
                 // window.set_cursor_position(LogicalPosition::new(WIDTH, HEIGHT));
                 r *= 0.035;
                 g.player.dir = (na::Rotation2::new(r) * g.player.dir).normalize();
-                if input.key_held(KeyCode::ArrowUp)   { g.player.pitch += 1.0; }
-                if input.key_held(KeyCode::ArrowDown) { g.player.pitch -= 1.0; }
+                if input.key_held(KeyCode::ArrowUp)   { g.player.pitch -= 5.0; }
+                if input.key_held(KeyCode::ArrowDown) { g.player.pitch += 5.0; }
                 // println!("{:?}", g.player.pitch);
 
                 g.player.pitch = (g.player.pitch + input.mouse_diff().1 as f64 / 2.0).clamp(-121.0, 121.0);
