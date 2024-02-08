@@ -1,4 +1,4 @@
-use nalgebra::Vector2;
+use nalgebra::{Vector, Vector2};
 
 use crate::{WIDTH, game::Game};
 
@@ -68,11 +68,44 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             // Air | Light
             0 | 1 => {}
             // Diagonal
-            5 => {
-                if side == 0 {
-                    let perp_dist = distance*dir.angle(&game.player.dir).cos();
-                    return Some((tile_index, perp_dist, 0.7, 255));
+            5 => 'label: {
+                let pos = start_pos + distance * dir;
+
+                // // First check if we're hitting a side
+                // if tell_info {
+                //     println!("{:?} {:?} - {:?} - {:?} - {:?}", map_pos.x, map_pos.x as f64, pos.x, pos.x.floor(), distance);
+                // }
+                // if map_pos.x as f64 == pos.x.floor() {
+                //     let perp_dist = (distance)*dir.angle(&game.player.dir).cos();
+                //     return Some((tile_index, perp_dist, 0.7, 255));
+                // }
+
+                // Check if we hit diagonally
+                // Solve where the lines intersect algebraically, derived from two equations y=mx+c and setting them equal to eachother
+                // The equation for the diagonal is y = x + map_pos.y
+                let ray_gradient = dir.y / dir.x;
+
+                let diagonal_y_intercept = map_pos.y as f64 - map_pos.x as f64;
+
+                let x_intersection = (pos.y - (ray_gradient*pos.x) - diagonal_y_intercept) / (1.0 - ray_gradient);
+                
+                // If the point of intersection isn't in the cell, we don't wanna render it!
+                if x_intersection > map_pos.x as f64 + 1.0 || x_intersection < map_pos.x as f64 {
+                    break 'label;
                 }
+                // If inside the cell and facing the wrong way, it'll still get 
+
+                let y_intersection = x_intersection + diagonal_y_intercept;
+                let intersection = Vector2::new(x_intersection, y_intersection);
+
+                // TODO: make all positions POINTS and not vector 2s
+                let q = na::point![pos.x, pos.y];
+                let w = na::point![intersection.x, intersection.y];
+
+                // The line checking function works perfectly fine, however getting the perpendicular disnatnce is super weird!
+                let d = na::distance(&q, &w);
+                let perp_dist = (distance+d)*dir.angle(&game.player.dir).cos();
+                return Some((tile_index, perp_dist, 0.7, 255));
             }
             // Thin wall N/S
             6 => {
@@ -86,16 +119,14 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
                 // let current_pos = 
 
                 let perp_dist = distance*dir.angle(&game.player.dir).cos();
-                return Some((tile_index, perp_dist, 0.2, 255))
+                // return Some((tile_index, perp_dist, 0.2, 255));
             }
             // Otherwise...
             _ => {
                 // Calculate the perpendicular distance
                 // https://www.permadi.com/tutorial/raycast/rayc8.html
                 let perp_dist = distance*dir.angle(&game.player.dir).cos();
-                if tell_info {
-                    println!("{:?} {:?}", start_pos + distance * dir, ray_length_1d.x < ray_length_1d.y);
-                }
+
                 let texture_along: f64;
                 // TODO: Store sides and use them to determine this :3
                 if side == 0 {

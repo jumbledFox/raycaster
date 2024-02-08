@@ -17,9 +17,9 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new() -> Player {
+    pub fn new(pos: Vector2<f64>) -> Player {
         Player {
-            pos: Vector2::new(1.5, 2.5), dir: Vector2::new(1.0, 0.0), pitch: 0.0,
+            pos, dir: Vector2::new(1.0, 0.0), pitch: 0.0,
             vel: Vector2::zeros(), cam_plane: Vector2::new(-1.0, 0.0), head_bob_amount: 0.0, mid_ray_dist: 0.0,
             lineposa: Vector2::zeros(), lineposb: Vector2::zeros(), }
     }

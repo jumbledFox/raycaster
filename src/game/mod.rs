@@ -31,6 +31,7 @@ impl Game {
         let map = map_info.0;
         let map_width  = map_info.1;
         let map_height = map_info.2;
+        let player_spawn = map_info.3;
         /*
         let map_width  = 30;
         let map_height = 30;
@@ -58,7 +59,7 @@ impl Game {
         */
 
         let mut g = Game {
-            player: Player::new(),
+            player: Player::new(player_spawn),
             texture: texture.chunks_exact(4).map(|chunk| chunk.try_into().unwrap()).collect(),
             texture_size: (im.width() as usize, im.height() as usize),
             map, map_width, map_height,
@@ -68,10 +69,11 @@ impl Game {
         g
     }
 
-    fn load_map(image_path: String) -> (Vec<u8>, usize, usize) {
+    fn load_map(image_path: String) -> (Vec<u8>, usize, usize, Vector2<f64>) {
         let im = image::open(image_path).unwrap().to_rgb8();
         let width  = im.width()  as usize;
         let height = im.height() as usize;
+        let mut player_spawn = Vector2::new(0.0, 0.0);
         let mut map = vec![0; width*height];
         for (i, p) in im.pixels().enumerate() {
             map[i] = match p.0 {
@@ -81,7 +83,11 @@ impl Game {
                 [190, 190, 190] => 4, // wall - orange
                 [  4, 126,   0] => 5, // thin wall -
                 [  6, 255,   4] => 6, // thin wall |
-                [0xff, 0x00, 0xdc] => 7, // Cylinder
+                [255,   0, 220] => 7, // Cylinder
+                [254,   0, 255] => {
+                    player_spawn.x = (i % width) as f64 + 0.5;
+                    player_spawn.y = (i / width) as f64 + 0.5;
+                    0 }, // Spawn
                 _ => 0,
             };
             match p.0 {
@@ -89,7 +95,7 @@ impl Game {
                 _ => {}
             }
         }
-        (map, width, height)
+        (map, width, height, player_spawn)
     }
 
     // TODO: Maybe implement something like this:
