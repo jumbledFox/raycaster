@@ -1,12 +1,16 @@
 pub mod player;
+pub mod map;
 
 use nalgebra::Vector2;
+
 use player::Player;
+use map::Map;
 
 use image;
 
 pub struct Game {
     pub player: Player,
+    pub map_m: Map,
     pub map: Vec<u8>,
     pub lightmap: Vec<u8>,
     pub texture: Vec<[u8; 4]>,
@@ -27,7 +31,7 @@ impl Game {
         let im = image::open("res/bricks.png").unwrap().to_rgba8();
         let texture: Vec<u8> = im.clone().into_raw();
 
-        let map_info = Game::load_map(String::from("res/map2.png"));
+        let map_info = Game::load_map(String::from("res/map3.png"));
         let map = map_info.0;
         let map_width  = map_info.1;
         let map_height = map_info.2;
@@ -62,6 +66,7 @@ impl Game {
             player: Player::new(player_spawn),
             texture: texture.chunks_exact(4).map(|chunk| chunk.try_into().unwrap()).collect(),
             texture_size: (im.width() as usize, im.height() as usize),
+            map_m: Map::load(String::from("res/map3.png")),
             map, map_width, map_height,
             lightmap: vec![],
         };
@@ -77,14 +82,16 @@ impl Game {
         let mut map = vec![0; width*height];
         for (i, p) in im.pixels().enumerate() {
             map[i] = match p.0 {
-                [255, 255, 255] => 2, // wall
-                [255, 255,   4] => 1, // light
-                [254,   0,   0] => 3, // wall - red
-                [190, 190, 190] => 4, // wall - orange
-                [  4, 126,   0] => 5, // thin wall -
-                [  6, 255,   4] => 6, // thin wall |
-                [255,   0, 220] => 7, // Cylinder
-                [254,   0, 255] => {
+                [255, 255,   0] => 2, // light
+                [255, 255, 255] => 1, // wall
+                [255, 128, 255] => 3, // door -
+                [255,   0,   0] => 4, // wall - red
+                [190, 190, 190] => 5, // wall - orange
+                [  0, 128,   0] => 6, // diagonal \
+                [  6, 255,   4] => 7, // diagonal /
+                [  0,   0, 255] => 8, // cylinder
+
+                [255,   0, 255] => {
                     player_spawn.x = (i % width) as f64 + 0.5;
                     player_spawn.y = (i / width) as f64 + 0.5;
                     0 }, // Spawn
@@ -105,7 +112,7 @@ impl Game {
         // Find where all of the light are
         let light_positions: Vec<usize> = self.map.iter()
             .enumerate()
-            .filter(|(_, item)| **item == 1)
+            .filter(|(_, item)| **item == 2)
             .map(|(index, _)| index)
             .collect();
         // For each light in the scene

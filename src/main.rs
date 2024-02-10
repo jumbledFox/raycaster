@@ -69,7 +69,7 @@ fn main() {
                 WindowEvent::RedrawRequested => {
                     renderer::render_view(pixels.frame_mut(), &mut g, 2.0);
                     if render_map {
-                        renderer::render_map(pixels.frame_mut(), &mut g, 8);
+                        renderer::render_map(pixels.frame_mut(), &mut g, 5);
                     }
 
                     if let Err(err) = pixels.render() {

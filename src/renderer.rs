@@ -1,6 +1,6 @@
 use std::{f64::consts::PI, ops::Add};
 
-use crate::{WIDTH, HEIGHT, WIDTH_USIZE, HEIGHT_USIZE, na, Vector2, util::{self}, game::{Game, player}, ASPECT_RATIO};
+use crate::{WIDTH, HEIGHT, WIDTH_USIZE, HEIGHT_USIZE, na, Vector2, util, game::{Game, player}, ASPECT_RATIO};
 
 use lerp::num_traits::CheckedShr;
 use na::coordinates::X;
