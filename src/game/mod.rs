@@ -8,6 +8,8 @@ use map::Map;
 
 use image;
 
+use self::map::Cell;
+
 pub struct Game {
     pub player: Player,
     pub map_m: Map,
@@ -149,10 +151,11 @@ impl Game {
                             { continue; }
 
                         let neighbour_index = self.coord_to_index(&n_x.unwrap(), &n_y.unwrap());
-                        // Skip if the neighbour is solid (or a thin wall)
-                        match self.map[neighbour_index] {
-                            0 | 1 | 5 | 6 => (),
-                            _ => continue
+                        // Skip if the neighbour is solid
+                        match self.map_m.get(neighbour_index).kind {
+                            1 => continue,
+                            // TODO: Give shapes some kind of flag for allowing light through or not
+                            0 | 2 | _ => (),
                         };
                         // Add to position buffer (may contain duplicates, so we'll have to deal with that later)
                         position_buffer.push(neighbour_index);

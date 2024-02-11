@@ -11,8 +11,8 @@ use rand::Rng;
 // the hit point, how far away it was, and if it hit x or y!
 // (cell, hit_pos, distance, texture_along, side)
 
-// (cell, distance, texture_along, brightness)
-type RaycastResult = Option<(usize, f64, f64, u8)>;
+// (cell, distance, texture_along, brightness, side)
+type RaycastResult = Option<(usize, f64, f64, u8, u8)>;
 
 pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64, tell_info: bool) -> RaycastResult {
     // If the ray is out of bounds, don't bother.
@@ -67,8 +67,9 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
         // Get the tile at the current position, check it out
         let tile_index = game.coord_to_index(&map_pos.x, &map_pos.y);
         let tile = game.map.get(tile_index).unwrap();
-        match *tile {
-            // Air | Light
+        let t = game.map_m.get(tile_index);
+        match t.kind {
+            // Air | Light, obviously don't want to render this
             0 | 2 => {}
             // Solid cube
             1 => {
@@ -84,95 +85,15 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
                     texture_along = (start_pos + perp_dist * dir).x.rem_euclid(1.0);
                 }
                 
-                return Some((tile_index, perp_dist, texture_along, 255));
+                return Some((tile_index, perp_dist, texture_along, side * 64 + 191, side));
             }
             // Other shape...
             _ => {
-                let shape_result = calc_shape_hit_info(dir.y/dir.x, map_pos, start_pos, crate::game::map::Cell::new(0, 5, 0b000000_1));
+                let shape_result = calc_shape_hit_info(dir.y/dir.x, map_pos, start_pos, game.map_m.get(tile_index));
                 if let Some((distance, texture_along, brightness)) = shape_result {
                     let perp_dist = distance*dir.angle(&game.player.dir).cos();
-                    return Some((tile_index, perp_dist, texture_along, brightness));
+                    return Some((tile_index, perp_dist, texture_along, brightness, side));
                 }
-            }
-            // - wall
-            3 => 'label: {
-                let ray_gradient = dir.y / dir.x;
-                // derived from line equations
-                let x_intersection = (0.6 + map_pos.y as f64 - start_pos.y + (ray_gradient * start_pos.x)) / ray_gradient;
-                
-                // If the point of intersection isn't in the cell, we don't wanna render it!
-                if x_intersection > map_pos.x as f64 + 1.0 || x_intersection < map_pos.x as f64 {
-                    break 'label;
-                }
-
-                let y_intersection = 0.6 + map_pos.y as f64;
-                
-                let intersection = Vector2::new(x_intersection, y_intersection);
-
-                // TODO: make all positions POINTS and not vector 2s
-                let q = na::point![start_pos.x, start_pos.y];
-                let w = na::point![intersection.x, intersection.y];
-
-                // Doesn't use the 'distance' variable due to quirks. Should be fine.
-                let d = na::distance(&q, &w);
-                let perp_dist = d*dir.angle(&game.player.dir).cos();
-                return Some((tile_index, perp_dist, 0.7, 255));
-            }
-            // Diagonal
-            6 => 'label: {
-                // // First check if we're hitting a side
-                // if tell_info {
-                //     println!("{:?} {:?} - {:?} - {:?} - {:?}", map_pos.x, map_pos.x as f64, pos.x, pos.x.floor(), distance);
-                // }
-                // if map_pos.x as f64 == pos.x.floor() {
-                //     let perp_dist = (distance)*dir.angle(&game.player.dir).cos();
-                //     return Some((tile_index, perp_dist, 0.7, 255));
-                // }
-
-                // Check if we hit diagonally
-                // Solve where the lines intersect algebraically, derived from two equations y=mx+c and setting them equal to eachother
-                // The equation for the diagonal is y = x + map_pos.y
-                let ray_gradient = dir.y / dir.x;
-
-                let diagonal_y_intercept = map_pos.y as f64 - map_pos.x as f64;
-
-                let x_intersection = (start_pos.y - (ray_gradient*start_pos.x) - diagonal_y_intercept) / (1.0 - ray_gradient);
-                
-                // If the point of intersection isn't in the cell, we don't wanna render it!
-                if x_intersection > map_pos.x as f64 + 1.0 || x_intersection < map_pos.x as f64 {
-                    break 'label;
-                }
-                // If inside the cell and facing the wrong way, it'll still get 
-
-                let y_intersection = x_intersection + diagonal_y_intercept;
-                let intersection = Vector2::new(x_intersection, y_intersection);
-
-                // TODO: make all positions POINTS and not vector 2s
-                let q = na::point![start_pos.x, start_pos.y];
-                let w = na::point![intersection.x, intersection.y];
-
-                // Doesn't use the 'distance' variable due to quirks. Should be fine.
-                let d = na::distance(&q, &w);
-                let perp_dist = d*dir.angle(&game.player.dir).cos();
-                return Some((tile_index, perp_dist, 0.7, 255));
-            }
-            // Thin wall N/S
-            6 => {
-                let perp_dist = distance*dir.angle(&game.player.dir).cos();
-                return Some((tile_index, perp_dist, 0.7, 255));
-            }
-
-            // Pillar
-            7 => {
-                // See if the 
-                // let current_pos = 
-
-                let perp_dist = distance*dir.angle(&game.player.dir).cos();
-                // return Some((tile_index, perp_dist, 0.2, 255));
-            }
-            // Otherwise...
-            _ => {
-
             }
         }
 

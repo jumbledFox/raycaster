@@ -14,8 +14,22 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
     // floor and ceiling
     let middle = (((HEIGHT/2) as f64 - game.player.pitch) as usize).min(HEIGHT as usize-1);
-    draw_rect(screen, 0, 0,      WIDTH as usize, middle,            &[ 26,  28,  44, 0xFF]);
-    draw_rect(screen, 0, middle, WIDTH as usize, HEIGHT as usize,   &[ 51,  60,  87, 0xFF]);
+
+    let light_level = game.lightmap[game.coord_to_index(&(game.player.pos.x as usize), &(game.player.pos.y as usize))];
+
+    let floor_col = [
+        (26 / 16) * (light_level + 1),
+        (28 / 16) * (light_level + 1),
+        (44 / 16) * (light_level + 1),
+    255];
+    let ceil_col = [
+        (51 / 16) * (light_level + 1),
+        (60 / 16) * (light_level + 1),
+        (87 / 16) * (light_level + 1),
+    255];
+
+    draw_rect(screen, 0, 0,      WIDTH as usize, middle,            &floor_col);
+    draw_rect(screen, 0, middle, WIDTH as usize, HEIGHT as usize,   &ceil_col);
     
     // TODO: make it so no-matter the aspect ratio, the map is always cubes
     // for i in 0..100 {
@@ -24,7 +38,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
         let raycast_result = util::raycast(game, game.player.pos, ray_direction, 500.0, w == WIDTH/2);
-        if let Some((cell, distance, texture_along, b)) = raycast_result {
+        if let Some((cell, distance, texture_along, brightness, side)) = raycast_result {
             // Calculating heights
             let head_height = (game.player.head_bob_amount.sin() / distance) * 10.0;
 
@@ -53,7 +67,8 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             //println!("{:?}", along);
 
             // Color stuff
-            let mut color = get_col(game.map[cell]-1);
+            // let mut color = get_col(game.map[cell]-1);
+            let mut color = [255; 4];
             // if side == util::RaycastSide::Y {
             //     color[0] = (color[0] as f32 * 0.7) as u8;
             //     color[1] = (color[1] as f32 * 0.7) as u8;
@@ -77,11 +92,30 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             //         }
             //     },
             // };
-            
-            // let light_level = game.lightmap[cell.saturating_add_signed(offset)];
-            // color[0] = (color[0] / 16) * (light_level + 1);
-            // color[1] = (color[1] / 16) * (light_level + 1);
-            // color[2] = (color[2] / 16) * (light_level + 1);
+            color[0] = (color[0] as f32 * (brightness as f32 / 255.0)) as u8;
+            color[1] = (color[1] as f32 * (brightness as f32 / 255.0)) as u8;
+            color[2] = (color[2] as f32 * (brightness as f32 / 255.0)) as u8;
+
+            let offset = match game.map_m.get(cell).kind == 1 {
+                true => {
+                    if side == 0 {
+                        match ray_direction.x.is_sign_positive() {
+                            true  => -1,
+                            false =>  1,
+                        }
+                    } else {
+                        match ray_direction.y.is_sign_positive() {
+                            true  => -(game.map_m.width as isize),
+                            false =>   game.map_m.width as isize,
+                        }
+                    }
+                }
+                _ => 0
+            };
+            let light_level = game.lightmap[cell.saturating_add_signed(offset)];
+            color[0] = (color[0] / 16) * (light_level + 1);
+            color[1] = (color[1] / 16) * (light_level + 1);
+            color[2] = (color[2] / 16) * (light_level + 1);
             //if w == 0 {println!("{:?}  {:?}", color, light_level)};
 
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
@@ -112,7 +146,7 @@ fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: 
 
         let pos = 1*(w)+WIDTH_USIZE * s;
 
-        let mut c = game.texture[texture_indexes[travelled]];
+        let mut c = game.texture.get(texture_indexes[travelled]).unwrap_or(&[0xFF, 0x00, 0xFF, 0xFF]).clone();
         c[0] = ((c[0] as f32 / 255.0)*(col[0] as f32)) as u8;
         c[1] = ((c[1] as f32 / 255.0)*(col[1] as f32)) as u8;
         c[2] = ((c[2] as f32 / 255.0)*(col[2] as f32)) as u8;
