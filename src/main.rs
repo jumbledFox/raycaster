@@ -1,6 +1,6 @@
 use std::{ops::Rem, time::Instant};
 
-use game::Game;
+use game::{map::DoorState, Game};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{EventLoop, ControlFlow, EventLoopWindowTarget},
@@ -125,35 +125,52 @@ fn main() {
                 window.set_cursor_position(LogicalPosition::new(window.inner_size().width/2, window.inner_size().height/2));
             }
 
-            // // Breaking blocks
-            // if input.mouse_pressed(0) && cursor_mode == CursorMode::Locked {
-            //     if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5, false) {
-            //         if !(cell % g.map_width == 0 || cell % g.map_width == g.map_width-1 ||
-            //              cell / g.map_width == 0 || cell / g.map_width == g.map_height-1) {
-            //             g.map[cell] = 0;
-            //             g.calculate_lightmap();
-            //         }
-            //     }
-            // }
-            // // Placing blocks
-            // // This is a bit wonky lol
-            // if input.mouse_pressed(1) && cursor_mode == CursorMode::Locked {
-            //     if let Some((cell, pos, real_dist, side)) = util::raycast(&g, g.player.pos, g.player.dir, 4.5, false) {
-            //         // g.map[cell] = 0;
-            //         let mut c: usize = 0;
-            //         if side == util::RaycastSide::X {
-            //             c = pos.y as usize * g.map_width + (pos.x as usize).saturating_add_signed(-g.player.dir.x.signum() as isize);
-            //         } else {
-            //             c = (pos.y as usize).saturating_add_signed(-g.player.dir.y.signum() as isize) * g.map_width + pos.x as usize;
-            //         }
-            //         if !(c % g.map_width == 0 || c % g.map_width == g.map_width-1 ||
-            //              c / g.map_width == 0 || c / g.map_width == g.map_height-1) {
-            //            g.map[c] = 2;
-            //            g.calculate_lightmap();
+            // Updating doors
+            for d in g.map_m.doors.values_mut() {
+                *d = match *d {
+                    // If the door is closed.. keep it closed!
+                    DoorState::Closed => DoorState::Closed,
+                    // If the door is closing, make it close more until done
+                    DoorState::Closing(a) => {
+                        match a - deltatime > 0.0 {
+                            true  => DoorState::Closing(a - deltatime),
+                            false => DoorState::Closed,
+                        }
+                    }
+                    // If the door is opening, make it open more until done
+                    DoorState::Opening(a) => {
+                        match a - deltatime > 0.0 {
+                            true  => DoorState::Opening(a - deltatime),
+                            false => DoorState::Open(5.0),
+                        }
+                    }
+                    // If the door is open, wait 5 seconds and then close it
+                    DoorState::Open(a) => {
+                        match a - deltatime > 0.0 {
+                            true  => DoorState::Open(a - deltatime),
+                            false => DoorState::Closing(0.5),
+                        }
+                    }
+                };
+            }
 
-            //        }
-            //     }
-            // }
+            // Opening doors
+            if input.key_pressed(KeyCode::KeyE) {
+                if let Some((cell, distance, texture_along, brightness, side)) = util::raycast(&g, g.player.pos, g.player.dir, 2.0, false) {
+                    let c = g.map_m.get(cell);
+                    if c.kind == 3 {
+                        match *g.map_m.doors.get(&cell).unwrap() {
+                            DoorState::Closed  => {
+                                *g.map_m.doors.get_mut(&cell).unwrap() = DoorState::Opening(0.5);
+                            }
+                            DoorState::Closing(a) => {
+                                *g.map_m.doors.get_mut(&cell).unwrap() = DoorState::Opening(0.5-a);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
 
             // Player controls            
             if input.key_pressed(KeyCode::KeyC) { render_map = !render_map; }

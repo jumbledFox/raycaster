@@ -1,16 +1,34 @@
 use nalgebra::{point, Point2, Vector2};
 use rand::Rng;
 
-use crate::game::map::Cell;
+use crate::game::{map::{Cell, DoorState}, Game};
 
 // (distance, texture_along, brightness)
-pub fn calc_shape_hit_info(ray_gradient: f64, map_pos: Vector2<usize>, start_pos: Vector2<f64>, cell: &Cell) -> Option<(f64, f64, u8)> {
+pub fn calc_shape_hit_info(game: &Game, tile_index: usize, ray_gradient: f64, map_pos: Vector2<usize>, start_pos: Vector2<f64>, cell: &Cell) -> Option<(f64, f64, u8)> {
     let ray_y_intercept = start_pos.y - ray_gradient * start_pos.x;
 
     // (distance, texture_along, brightness)
     let mut hits: Vec<(Point2<f64>, f64, u8)> = Vec::with_capacity(1);
 
     match cell.kind {
+        // Door
+        3 => {
+            let amount = match *game.map_m.doors.get(&tile_index).unwrap() {
+                DoorState::Closed   => { 1.0 }
+                DoorState::Open(..) => { 0.0 }
+                DoorState::Closing(a) => { 1.0 - a*2.0 }
+                DoorState::Opening(a) => { a*2.0 }
+            };
+
+            let pos_s = match cell.flags & 0b00000011 {
+                00 => (Vector2::new(map_pos.x as f64 + 0.4,    map_pos.y as f64),
+                       Vector2::new(map_pos.x as f64 + 0.6,    map_pos.y as f64 + amount)),
+                _  => (Vector2::new(map_pos.x as f64 + 1.0,            map_pos.y as f64 + 0.4),
+                       Vector2::new(map_pos.x as f64 + (1.0 - amount), map_pos.y as f64 + 0.6)),
+            };
+            let mut h = quad_hit(ray_gradient, ray_y_intercept, pos_s.0, pos_s.1);
+            hits.append(&mut h);
+        }
         // Thick wall
         5 => {
             let pos_s = match cell.flags & 0b00000001 == 0 {
@@ -27,6 +45,13 @@ pub fn calc_shape_hit_info(ray_gradient: f64, map_pos: Vector2<usize>, start_pos
             let mut h = quad_hit(ray_gradient, ray_y_intercept,
                 Vector2::new(map_pos.x as f64 + 0.25, map_pos.y as f64 + 0.25),
                 Vector2::new(map_pos.x as f64 + 0.75, map_pos.y as f64 + 0.75));
+            hits.append(&mut h);
+        }
+        // Round pillar
+        7 => {
+            let mut h = quad_hit(ray_gradient, ray_y_intercept,
+                Vector2::new(map_pos.x as f64 + 0.1, map_pos.y as f64 + 0.1),
+                Vector2::new(map_pos.x as f64 + 0.9, map_pos.y as f64 + 0.9));
             hits.append(&mut h);
         }
         // Diagonal
@@ -134,3 +159,10 @@ fn quad_hit(ray_gradient: f64, ray_y_intercept: f64, quad_start: Vector2<f64>, q
 
 // Todo, make it so i can pass a list of points and it connects them 0 -> 1, 1 -> 2, 2 -> 3, 3 -> 0
 // fn ring_hit()
+
+// Circle hit
+fn cirle_hit(ray_gradient: f64, ray_y_intercept: f64, center: Vector2<f64>, radius: f64) -> Vec<(Point2<f64>, f64, u8)> {
+    let mut hit_points = Vec::with_capacity(2); 
+    
+    hit_points
+}

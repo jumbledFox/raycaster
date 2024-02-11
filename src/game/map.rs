@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use image;
 use nalgebra::Vector2;
 
@@ -14,6 +16,14 @@ impl Cell {
     pub fn new(texture_index: u8, kind: u8, flags: u8) -> Cell {
         Cell { texture_index, kind, flags }
     }
+}
+
+#[derive(PartialEq, Clone, Copy, Debug)]
+pub enum DoorState {
+    Closed,
+    Open(f64),
+    Closing(f64),
+    Opening(f64),
 }
 /* 
 Kinds             | Flags
@@ -32,6 +42,7 @@ pub struct Map {
     pub cells: Vec<Cell>,
     pub width : usize,
     pub height: usize,
+    pub doors: HashMap<usize, DoorState>,
 }
 
 impl Map {
@@ -47,19 +58,32 @@ impl Map {
         let mut player_spawn = Vector2::new(0.0, 0.0);
 
         let mut cells: Vec<Cell> = Vec::with_capacity(width*height);
-        
+        let mut doors = HashMap::new();
+
         for (i, p) in img.pixels().enumerate() {
             cells.push(match p.0 {
-                // Light
-                [255, 255,   0] => Cell::new(0, 2, 0b_11_11_11_00),
                 // Solid - white
                 [255, 255, 255] => Cell::new(0, 1, 0),
+                // Light
+                [255, 255,   0] => Cell::new(0, 2, 0b_11_11_11_00),
+                // Door NS
+                [127,  81,  25] => {
+                    doors.insert(i, DoorState::Closed);
+                    Cell::new(0, 3, 0b000000_00)
+                }
+                // Door WE
+                [204, 130,  40] => {
+                    doors.insert(i, DoorState::Closed);
+                    Cell::new(0, 3, 0b000000_11)
+                }
                 // Thick wall NS
                 [188,  96, 188] => Cell::new(0, 5, 0b0000000_0),
                 // Thick wall EW
                 [255, 128, 255] => Cell::new(0, 5, 0b0000000_1),
                 // Square pillar
                 [  0, 174, 255] => Cell::new(0, 6, 0b00000000),
+                // Round pillar
+                [  0,   0, 255] => Cell::new(0, 7, 0b00000000),
                 // Diagonal TL BR
                 [  0, 128,   0] => Cell::new(0, 8, 0b0000000_0),
                 // Diagonal TR BL
@@ -76,6 +100,6 @@ impl Map {
                 _ => Cell::new(0, 0, 0),
             });
         }
-        Map {cells, width, height}
+        Map {cells, width, height, doors}
     }
 }
