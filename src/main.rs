@@ -1,6 +1,6 @@
 use std::{ops::Rem, time::Instant};
 
-use game::{map::DoorState, Game};
+use game::{map::{Cell, DoorState}, Game};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{EventLoop, ControlFlow, EventLoopWindowTarget},
@@ -15,7 +15,7 @@ use log::{debug, error};
 use pixels::{Error, Pixels, SurfaceTexture};
 
 extern crate nalgebra as na;
-use na::Vector2;
+use na::{point, vector, Vector2};
 
 pub mod renderer;
 pub mod util;
@@ -63,6 +63,8 @@ fn main() {
 
     let mut door_open = 0.0;
 
+    util::shape::shape_hit(&g, &Cell::new(0, 0, 0), vector![1, 2], vector![2.5, 2.5], vector![-1.0, 0.0]);
+    
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
             match event {
