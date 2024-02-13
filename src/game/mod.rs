@@ -30,7 +30,7 @@ impl Game {
     }
 
     pub fn new() -> Game {
-        let im = image::open("res/bricks.png").unwrap().to_rgba8();
+        let im = image::open("res/bricks_blue.png").unwrap().to_rgba8();
         let texture: Vec<u8> = im.clone().into_raw();
 
         let map_info = Game::load_map(String::from("res/map3.png"));

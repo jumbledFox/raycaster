@@ -92,6 +92,7 @@ pub fn calc_shape_hit_info(game: &Game, tile_index: usize, ray_gradient: f64, ma
 // Also returns the ratio between the hitpoint and the start, useful for textures!!
 fn line_hit(ray_gradient: f64, ray_y_intercept: f64, line_start: Vector2<f64>, line_end: Vector2<f64>) -> Option<(Point2<f64>, f64, u8)> {
     // TODO: Check the direction of the ray to make sure we don't always get a distance if inside the cell
+    // Only needed if we're inside the cell, so we could probably save some performance by not checking unless inside
 
     // Make sure we don't get any wacky things by having an infinite gradient
     // TODO: Think about this and make it better
