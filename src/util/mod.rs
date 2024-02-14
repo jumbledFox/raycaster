@@ -89,7 +89,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             }
             // Other shape...
             _ => {
-                let shape_result = calc_shape_hit_info(game, tile_index, dir.y/dir.x, map_pos, start_pos, game.map_m.get(tile_index));
+                let shape_result = calc_shape_hit_info(game, tile_index, dir, map_pos, start_pos, game.map_m.get(tile_index));
                 if let Some((distance, texture_along, brightness)) = shape_result {
                     let perp_dist = distance*dir.angle(&game.player.dir).cos();
                     return Some((tile_index, perp_dist, texture_along, brightness, side));

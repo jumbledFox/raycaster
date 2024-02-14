@@ -6,11 +6,16 @@ use rand::Rng;
 use crate::game::{map::{Cell, DoorState}, Game};
 
 // (distance, texture_along, brightness)
-pub fn calc_shape_hit_info(game: &Game, tile_index: usize, ray_gradient: f64, map_pos: Vector2<usize>, start_pos: Vector2<f64>, cell: &Cell) -> Option<(f64, f64, u8)> {
+pub fn calc_shape_hit_info(game: &Game, tile_index: usize, ray_gradient: Vector2<f64>, map_pos: Vector2<usize>, start_pos: Vector2<f64>, cell: &Cell) -> Option<(f64, f64, u8)> {
 
     // The ray will check from it's position to anywhere in front of it.
-    let ray_y_intercept = start_pos.y - ray_gradient * start_pos.x;
-
+    // let ray_y_intercept = start_pos.y - ray_gradient * start_pos.x;
+    // return None;
+    let h = shape_hit(game, cell, map_pos, start_pos, ray_gradient);
+    if let Some(p) = h {
+        return Some((distance(&p, &point![start_pos.x, start_pos.y]), 0.5, 255));
+    }
+    /*
     // (distance, texture_along, brightness)
     let mut hits: Vec<(Point2<f64>, f64, u8)> = Vec::with_capacity(1);
 
@@ -89,18 +94,16 @@ pub fn calc_shape_hit_info(game: &Game, tile_index: usize, ray_gradient: f64, ma
             }
         }
         return Some((na::distance(&start_p, &hits[closest_hit.1].0), hits[closest_hit.1].1, hits[closest_hit.1].2));
-    }
+    }*/
+    None
 }
 
-pub fn shape_hit(game: &Game, cell: &Cell, map_pos: Vector2<usize>, ray_pos: Vector2<f64>, ray_dir: Vector2<f64>) {
+pub fn shape_hit(game: &Game, cell: &Cell, map_pos: Vector2<usize>, ray_pos: Vector2<f64>, ray_dir: Vector2<f64>) -> Option<Point2<f64>>{
     let map_pos_f = point![map_pos.x as f64, map_pos.y as f64];
     // STILL need to make everything use points instead of Vector2.. so this will do for now
     let local_ray_pos = point![ray_pos.x - map_pos_f.x, ray_pos.y - map_pos_f.y];
 
-
-
-    let p = line_hit_2(local_ray_pos, ray_dir, [point![0.0, 0.0], point![0.0, 1.0]], map_pos_f);
-    println!("{:?}", p);
+    line_hit_2(local_ray_pos, ray_dir, [point![0.0, 0.0], point![2.0, 2.0]], map_pos_f)
 }
 
 // Returns if/where the ray hit a given line. (as well as how far along :3)
@@ -111,7 +114,7 @@ fn line_hit_2(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, line_points: [Point2<
     let line_grad = epsilon_f64((line_points[1].y - line_points[0].y) / (line_points[1].x - line_points[0].x));
 
     let ray_y_intercept = ray_pos.y - ray_grad*ray_pos.x;
-    println!("{:?}", ray_y_intercept);
+
     // Work out where the lines meet on the x axis
     // Derived from substituting the ray's equation (in the form of y=mx+c) into the line's equation (in the form y-y1 = m(x-x1))
     let x_intercept = round_down_f64((((ray_y_intercept - line_points[0].y) / line_grad) + line_points[0].x) / (1.0 - ray_grad/line_grad));
@@ -119,14 +122,11 @@ fn line_hit_2(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, line_points: [Point2<
     // If the x intercept lies outside the points or the cell, we don't want it!!
     if  x_intercept < f64::min(line_points[0].x, line_points[1].x).clamp(0.0, 1.0) ||
         x_intercept > f64::max(line_points[0].x, line_points[1].x).clamp(0.0, 1.0) {
-            println!("{:?} is out of range!!", x_intercept);
         return None;
     }
     // Calculate by subbing into the ray's equation
     let y_intercept = round_down_f64(ray_grad * x_intercept + ray_y_intercept);
-
-    // println!("ray_grad: {:?}\nline_grad: {:?}\nray_y_intercept: {:?}\nx_intercept: {:?}\ny_intercept: {:?}",
-    //     ray_grad, line_grad, ray_y_intercept, x_intercept, y_intercept);
+    
     // If the y intercept lies outside the points or the cell, we don't want it!!
     if  y_intercept < f64::min(line_points[0].y, line_points[1].y).clamp(0.0, 1.0) ||
         y_intercept > f64::max(line_points[0].y, line_points[1].y).clamp(0.0, 1.0) {
@@ -145,10 +145,12 @@ fn line_hit_2(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, line_points: [Point2<
     // however I'd have to check for edge-cases like the line having 0 change in x or 0 change in y, and I HATE edge cases!!! >:c
     // so this works :3
     let along = distance(&point![x_intercept, y_intercept], &line_points[0]) / distance(&line_points[0], &line_points[1]);
-    println!("{:?}", along);
+    // println!("along: {:?}", along);
     Some(point![map_pos.x + x_intercept, map_pos.y + y_intercept])
 }
 
+// TODO: Make these functions nicer
+// TODO: NOT use any of these functions and instead add a little bit to one of the x/y if the x and/or the y are equal... 
 // Changes a float from 0.0 to a really small value, and from infinity to a really large one
 // Takes into account the sign of the input
 fn epsilon_f64(input: f64) -> f64 {
@@ -158,9 +160,11 @@ fn epsilon_f64(input: f64) -> f64 {
     else { input }
 }
 
+// Basically, when bounds checking, if the ray direction has been epsiloned and turned into a
+// positive or negative form of either 1.0e-20 or 1.0e20, sometimes it teeters right on the edg
 // If it's really close to zero, just make it zero. This is useful for checking bounds
 fn round_down_f64(input: f64) -> f64 {
-    match input <= 1.0e-20 {
+    match input <= 1.0e-19 && input >= -1.0e-19 {
         true  => 0.0,
         false => input,
     } 

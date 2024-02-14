@@ -63,7 +63,7 @@ fn main() {
 
     let mut door_open = 0.0;
 
-    util::shape::shape_hit(&g, &Cell::new(0, 0, 0), vector![1, 2], vector![2.5, 2.5], vector![-1.0, 0.0]);
+    util::shape::shape_hit(&g, &Cell::new(0, 0, 0), vector![1, 1], vector![1.0, 0.0], vector![0.0, -1.0]);
     
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
