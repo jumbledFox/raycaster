@@ -61,10 +61,6 @@ fn main() {
     let mut g = Game::new();
     let mut render_map = false;
 
-    let mut door_open = 0.0;
-
-    util::shape::shape_hit(&g, &Cell::new(0, 0, 0), vector![1, 1], vector![1.0, 0.0], vector![0.0, -1.0]);
-    
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
             match event {
@@ -84,9 +80,6 @@ fn main() {
         if input.update(&event) {
             deltatime = lasttime.elapsed().as_secs_f64();
             lasttime = Instant::now();
-
-            door_open = (door_open + deltatime).rem(1.0);
-            // println!("{:?}", door_open);
 
             // Exiting
             if input.key_pressed(KeyCode::Escape) || input.close_requested() {
@@ -158,7 +151,7 @@ fn main() {
 
             // Opening doors
             if input.key_pressed(KeyCode::KeyE) {
-                if let Some((cell, distance, texture_along, brightness, side)) = util::raycast(&g, g.player.pos, g.player.dir, 2.0, false) {
+                if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 2.0, false) {
                     let c = g.map_m.get(cell);
                     if c.kind == 3 {
                         match *g.map_m.doors.get(&cell).unwrap() {
