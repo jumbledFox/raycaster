@@ -2,11 +2,7 @@ use std::{ops::Rem, time::Instant};
 
 use game::{map::{Cell, DoorState}, Game};
 use winit::{
-    event::{Event, WindowEvent},
-    event_loop::{EventLoop, ControlFlow, EventLoopWindowTarget},
-    keyboard::KeyCode,
-    window::{WindowBuilder, WindowButtons},
-    dpi::{LogicalSize, PhysicalPosition, LogicalPosition},// platform::windows::WindowBuilderExtWindows,
+    dpi::{LogicalPosition, LogicalSize, PhysicalPosition}, event::{Event, WindowEvent}, event_loop::{ControlFlow, EventLoop, EventLoopWindowTarget}, keyboard::KeyCode, window::{Fullscreen, WindowBuilder, WindowButtons}// platform::windows::WindowBuilderExtWindows,
 };
 use winit_input_helper::WinitInputHelper;
 
@@ -118,6 +114,13 @@ fn main() {
             // If the cursor should be locked, move it to the middle every frame
             if cursor_mode == CursorMode::Locked {
                 window.set_cursor_position(LogicalPosition::new(window.inner_size().width/2, window.inner_size().height/2));
+            }
+
+            if input.key_pressed(KeyCode::F11) {
+                match window.fullscreen() {
+                    None => { window.set_fullscreen(Some(Fullscreen::Borderless(None))); }
+                    _    => { window.set_fullscreen(None); }
+                }
             }
 
             // Updating doors

@@ -100,11 +100,11 @@ pub fn calc_shape_hit_info(game: &Game, tile_index: usize, ray_gradient: Vector2
     None
 }
 
-trait PushWhenSome {
+trait PushIfSome {
     fn push_if_some(&mut self, value: Option<HitPoint>);
 }
 
-impl PushWhenSome for Vec<HitPoint> {
+impl PushIfSome for Vec<HitPoint> {
     fn push_if_some(&mut self, value: Option<HitPoint>) {
         if let Some(value_unwrapped) = value {
             self.push(value_unwrapped);
@@ -139,11 +139,11 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
             
             let orientation = cell.flags & 0b00000001 == 0;
             // Two long sides
-            hits.push_if_some(straight_line(orientation, local_ray_pos, ray_dir, ray_grad, 0.6, door_sides, map_pos_f));
-            hits.push_if_some(straight_line(orientation, local_ray_pos, ray_dir, ray_grad, 0.4, door_sides, map_pos_f));
+            hits.push_if_some(line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.6, door_sides, map_pos_f));
+            hits.push_if_some(line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.4, door_sides, map_pos_f));
             // Short bit
             // TODO: Make a better way to manipulate the values maybe..
-            if let Some(mut hit) = straight_line(!orientation, local_ray_pos, ray_dir, ray_grad, door_sides[0], [0.4, 0.6], map_pos_f) {
+            if let Some(mut hit) = line_axis(!orientation, local_ray_pos, ray_dir, ray_grad, door_sides[0], [0.4, 0.6], map_pos_f) {
                 // Make the texture not squished
                 hit.1 *= 0.2;
                 hits.push(hit);
@@ -152,22 +152,22 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
         // THIN WALL
         4 => {
             let orientation = cell.flags & 0b00000001 == 0;
-            hits.push_if_some(straight_line(orientation, local_ray_pos, ray_dir, ray_grad, 0.5, [0.0, 1.0], map_pos_f));
+            hits.push_if_some(line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.5, [0.0, 1.0], map_pos_f));
         }
         // THICK WALL
         5 => {
             let orientation = cell.flags & 0b00000001 == 0;
             // Long bits
-            hits.push_if_some(straight_line( orientation, local_ray_pos, ray_dir, ray_grad, 0.6, [0.0, 1.0], map_pos_f));
-            hits.push_if_some(straight_line( orientation, local_ray_pos, ray_dir, ray_grad, 0.4, [0.0, 1.0], map_pos_f));
+            hits.push_if_some(line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.6, [0.0, 1.0], map_pos_f));
+            hits.push_if_some(line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.4, [0.0, 1.0], map_pos_f));
             // Short bits
             // TODO: Make a better way to manipulate the values maybe..
-            if let Some(mut hit) = straight_line(!orientation, local_ray_pos, ray_dir, ray_grad, 0.0, [0.4, 0.6], map_pos_f) {
+            if let Some(mut hit) = line_axis(!orientation, local_ray_pos, ray_dir, ray_grad, 0.0, [0.4, 0.6], map_pos_f) {
                 // Make the texture not squished
                 hit.1 *= 0.2;
                 hits.push(hit);
             }
-            if let Some(mut hit) = straight_line(!orientation, local_ray_pos, ray_dir, ray_grad, 1.0, [0.4, 0.6], map_pos_f) {
+            if let Some(mut hit) = line_axis(!orientation, local_ray_pos, ray_dir, ray_grad, 1.0, [0.4, 0.6], map_pos_f) {
                 // Make the texture not squished
                 hit.1 *= 0.2;
                 hits.push(hit);
@@ -175,7 +175,10 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
         }
         // SQUARE PILLAR
         6 => {
-            return None;
+            hits.push_if_some(line_axis(true , local_ray_pos, ray_dir, ray_grad, 0.25, [0.25, 0.75], map_pos_f));
+            hits.push_if_some(line_axis(true , local_ray_pos, ray_dir, ray_grad, 0.75, [0.25, 0.75], map_pos_f));
+            hits.push_if_some(line_axis(false, local_ray_pos, ray_dir, ray_grad, 0.25, [0.25, 0.75], map_pos_f));
+            hits.push_if_some(line_axis(false, local_ray_pos, ray_dir, ray_grad, 0.75, [0.25, 0.75], map_pos_f));
         }
         // ROUND PILLAR
         7 => {
@@ -188,7 +191,7 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
                 true  => [point![0.0, 0.0], point![1.0, 1.0]],
                 false => [point![1.0, 0.0], point![0.0, 1.0]],
             };
-            hits.push_if_some(line_hit_2(local_ray_pos, ray_dir, ray_grad, positions, map_pos_f));
+            hits.push_if_some(line(local_ray_pos, ray_dir, ray_grad, positions, map_pos_f));
         }
         _ => { return None }
     }
@@ -213,16 +216,22 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
     }
 }
 
-fn straight_line(side: bool, ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>)
+fn quad(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, intercept: f64, rect_start: Point2<f64>) {
+
+}
+
+// A line on an axis 
+// If `axis`` is false the line is on the X axis, otherwise it's on the Y
+fn line_axis(axis: bool, ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>)
     -> Option<HitPoint> {
-    match side {
-        false => x_line(ray_pos, ray_dir, ray_grad, intercept, line_bounds, map_pos),
-        true  => y_line(ray_pos, ray_dir, ray_grad, intercept, line_bounds, map_pos),
+    match axis {
+        false => line_x(ray_pos, ray_dir, ray_grad, intercept, line_bounds, map_pos),
+        true  => line_y(ray_pos, ray_dir, ray_grad, intercept, line_bounds, map_pos),
     }
 }
 
 // A line on the X axis.
-fn x_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, y_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
+fn line_x(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, y_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
     // If the y intercept lies outside the the cell, we don't want it!!
     if !between_in_cell(y_intercept, 0.0, 1.0) { return None; }
     
@@ -240,7 +249,7 @@ fn x_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, y_intercep
 }
 
 // A line on the Y axis.
-fn y_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, x_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
+fn line_y(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, x_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
     // If the x intercept lies outside the the cell, we don't want it!!
     if !between_in_cell(x_intercept, 0.0, 1.0) { return None; }
     
@@ -259,12 +268,12 @@ fn y_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, x_intercep
 
 // Returns if/where the ray hit a given line. (as well as how far along :3)
 // from 0 - 1 inside a cell.
-fn line_hit_2(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, line_points: [Point2<f64>; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
+fn line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, line_points: [Point2<f64>; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
     // If the line is straight along the x axis or y axis, check it the quick (and less error-prone) way.
     if line_points[0].x == line_points[1].x {
-        return y_line(ray_pos, ray_dir, ray_grad, line_points[0].x, [line_points[0].y, line_points[1].y], map_pos);
+        return line_y(ray_pos, ray_dir, ray_grad, line_points[0].x, [line_points[0].y, line_points[1].y], map_pos);
     } else if line_points[0].y == line_points[1].y {
-        return x_line(ray_pos, ray_dir, ray_grad, line_points[0].y, [line_points[0].x, line_points[1].x], map_pos);
+        return line_x(ray_pos, ray_dir, ray_grad, line_points[0].y, [line_points[0].x, line_points[1].x], map_pos);
     }
 
     let line_grad = (line_points[1].y - line_points[0].y) / (line_points[1].x - line_points[0].x);
