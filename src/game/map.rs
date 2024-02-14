@@ -30,7 +30,7 @@ Kinds             | Flags
 0 - Nothing       | None
 1 - Solid wall    | None
 2 - Light         | 00 00 00 rgb colours
-3 - Door          | 00 direction (NS, EW, SN, WE) 00 open type (slide left, right, up, down)
+3 - Door          | 0 N or W, 0, flipped or not
 4 - Thin wall     | 0 direction
 5 - Thick wall    | 0 direction
 6 - Square Pillar | 

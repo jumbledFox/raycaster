@@ -5,7 +5,7 @@ use rand::{thread_rng, Rng};
 
 use crate::game::{map::{Cell, DoorState}, Game};
 
-type HitPoint = Option<(Point2<f64>, f64, u8)>;
+type HitPoint = (Point2<f64>, f64, u8);
 
 // (distance, texture_along, brightness)
 pub fn calc_shape_hit_info(game: &Game, tile_index: usize, ray_gradient: Vector2<f64>, map_pos: Vector2<usize>, start_pos: Vector2<f64>, cell: &Cell) -> Option<(f64, f64, u8)> {
@@ -13,10 +13,10 @@ pub fn calc_shape_hit_info(game: &Game, tile_index: usize, ray_gradient: Vector2
     // The ray will check from it's position to anywhere in front of it.
     // let ray_y_intercept = start_pos.y - ray_gradient * start_pos.x;
     // return None;
-    let h = shape_hit(game, cell, tile_index, map_pos, start_pos, ray_gradient);
-    if let Some((p, a, b)) = h {
-        return Some((p, a, b));
-    }
+    return shape_hit(game, cell, tile_index, map_pos, start_pos, ray_gradient);
+    // if let Some((p, a, b)) = h {
+    //     return Some((p, a, b));
+    // }
     /*
     // (distance, texture_along, brightness)
     let mut hits: Vec<(Point2<f64>, f64, u8)> = Vec::with_capacity(1);
@@ -100,6 +100,18 @@ pub fn calc_shape_hit_info(game: &Game, tile_index: usize, ray_gradient: Vector2
     None
 }
 
+trait PushWhenSome {
+    fn push_if_some(&mut self, value: Option<HitPoint>);
+}
+
+impl PushWhenSome for Vec<HitPoint> {
+    fn push_if_some(&mut self, value: Option<HitPoint>) {
+        if let Some(value_unwrapped) = value {
+            self.push(value_unwrapped);
+        }
+    }
+}
+
 pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<usize>, ray_pos: Vector2<f64>, ray_dir: Vector2<f64>) -> Option<(f64, f64, u8)>{
     let map_pos_f = point![map_pos.x as f64, map_pos.y as f64];
     // STILL need to make everything use points instead of Vector2.. so this will do for now
@@ -117,18 +129,34 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
                 DoorState::Closing(a) => { 1.0 - a*2.0 }
                 DoorState::Opening(a) => { a*2.0 }
             };
+            // The left and the right of the door
+            let poses = match (cell.flags & 0b00000010) >> 1 == 1 {
+                true =>  [amount, amount-1.0],
+                false => [1.0-amount, 2.0-amount],
+            };
             
-            hits.push(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![amount-1.0, 0.6], point![amount, 0.6]], map_pos_f));
-            hits.push(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![amount-1.0, 0.4], point![amount, 0.4]], map_pos_f));
-            if let Some(mut edge) = y_line(local_ray_pos, ray_dir, ray_grad, amount, [0.4, 0.6], map_pos_f) {
-                edge.1 *= 0.2;
-                hits.push(Some(edge));
+            match cell.flags & 0b00000001 == 1 {
+                true => {
+                    hits.push_if_some(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![poses[0], 0.6], point![poses[1], 0.6]], map_pos_f));
+                    hits.push_if_some(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![poses[0], 0.4], point![poses[1], 0.4]], map_pos_f));
+                    if let Some(mut edge) = y_line(local_ray_pos, ray_dir, ray_grad, poses[0], [0.4, 0.6], map_pos_f) {
+                        edge.1 *= 0.2;
+                        hits.push(edge);
+                    }
+                }
+                false => {
+                    hits.push_if_some(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![0.6, poses[0]], point![0.6, poses[1]]], map_pos_f));
+                    hits.push_if_some(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![0.4, poses[0]], point![0.4, poses[1]]], map_pos_f));
+                    if let Some(mut edge) = x_line(local_ray_pos, ray_dir, ray_grad, poses[0], [0.4, 0.6], map_pos_f) {
+                        edge.1 *= 0.2;
+                        hits.push(edge);
+                    }
+                }
             }
+            
         }
         _ => { return None }
     }
-
-    let hits: Vec<(Point2<f64>, f64, u8)> = hits.into_iter().flatten().collect();
 
     if hits.is_empty() { return None; }
     let start_p = na::point![ray_pos.x, ray_pos.y];
@@ -153,7 +181,7 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
 
 
 // A line on the X axis.
-fn x_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, y_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> HitPoint {
+fn x_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, y_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
     // If the y intercept lies outside the the cell, we don't want it!!
     if !between_in_cell(y_intercept, 0.0, 1.0) { return None; }
     
@@ -171,7 +199,7 @@ fn x_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, y_intercep
 }
 
 // A line on the Y axis.
-fn y_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, x_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> HitPoint {
+fn y_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, x_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
     // If the x intercept lies outside the the cell, we don't want it!!
     if !between_in_cell(x_intercept, 0.0, 1.0) { return None; }
     
@@ -190,7 +218,7 @@ fn y_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, x_intercep
 
 // Returns if/where the ray hit a given line. (as well as how far along :3)
 // from 0 - 1 inside a cell.
-fn line_hit_2(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, line_points: [Point2<f64>; 2], map_pos: Point2<f64>) -> HitPoint {
+fn line_hit_2(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, line_points: [Point2<f64>; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
     // If the line is straight along the x axis or y axis, check it the quick (and less error-prone) way.
     if line_points[0].x == line_points[1].x {
         return y_line(ray_pos, ray_dir, ray_grad, line_points[0].x, [line_points[0].y, line_points[1].y], map_pos);
