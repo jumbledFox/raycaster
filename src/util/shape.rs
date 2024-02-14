@@ -122,6 +122,7 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
     let mut hits: Vec<HitPoint> = Vec::with_capacity(1);
 
     match cell.kind {
+        // DOOR
         3 => {
             let amount = match *game.map_m.doors.get(&tile_index).unwrap() {
                 DoorState::Closed   => { 1.0 }
@@ -130,30 +131,64 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
                 DoorState::Opening(a) => { a*2.0 }
             };
             // The left and the right of the door
-            let poses = match (cell.flags & 0b00000010) >> 1 == 1 {
-                true =>  [amount, amount-1.0],
-                false => [1.0-amount, 2.0-amount],
+            // Changes depending on the flipped flag
+            let door_sides = match (cell.flags & 0b00000010) >> 1 {
+                0 => [amount, amount-1.0],
+                _ => [1.0-amount, 2.0-amount],
             };
             
-            match cell.flags & 0b00000001 == 1 {
-                true => {
-                    hits.push_if_some(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![poses[0], 0.6], point![poses[1], 0.6]], map_pos_f));
-                    hits.push_if_some(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![poses[0], 0.4], point![poses[1], 0.4]], map_pos_f));
-                    if let Some(mut edge) = y_line(local_ray_pos, ray_dir, ray_grad, poses[0], [0.4, 0.6], map_pos_f) {
-                        edge.1 *= 0.2;
-                        hits.push(edge);
-                    }
-                }
-                false => {
-                    hits.push_if_some(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![0.6, poses[0]], point![0.6, poses[1]]], map_pos_f));
-                    hits.push_if_some(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![0.4, poses[0]], point![0.4, poses[1]]], map_pos_f));
-                    if let Some(mut edge) = x_line(local_ray_pos, ray_dir, ray_grad, poses[0], [0.4, 0.6], map_pos_f) {
-                        edge.1 *= 0.2;
-                        hits.push(edge);
-                    }
-                }
+            let orientation = cell.flags & 0b00000001 == 0;
+            // Two long sides
+            hits.push_if_some(straight_line(orientation, local_ray_pos, ray_dir, ray_grad, 0.6, door_sides, map_pos_f));
+            hits.push_if_some(straight_line(orientation, local_ray_pos, ray_dir, ray_grad, 0.4, door_sides, map_pos_f));
+            // Short bit
+            // TODO: Make a better way to manipulate the values maybe..
+            if let Some(mut hit) = straight_line(!orientation, local_ray_pos, ray_dir, ray_grad, door_sides[0], [0.4, 0.6], map_pos_f) {
+                // Make the texture not squished
+                hit.1 *= 0.2;
+                hits.push(hit);
             }
-            
+        }
+        // THIN WALL
+        4 => {
+            let orientation = cell.flags & 0b00000001 == 0;
+            hits.push_if_some(straight_line(orientation, local_ray_pos, ray_dir, ray_grad, 0.5, [0.0, 1.0], map_pos_f));
+        }
+        // THICK WALL
+        5 => {
+            let orientation = cell.flags & 0b00000001 == 0;
+            // Long bits
+            hits.push_if_some(straight_line( orientation, local_ray_pos, ray_dir, ray_grad, 0.6, [0.0, 1.0], map_pos_f));
+            hits.push_if_some(straight_line( orientation, local_ray_pos, ray_dir, ray_grad, 0.4, [0.0, 1.0], map_pos_f));
+            // Short bits
+            // TODO: Make a better way to manipulate the values maybe..
+            if let Some(mut hit) = straight_line(!orientation, local_ray_pos, ray_dir, ray_grad, 0.0, [0.4, 0.6], map_pos_f) {
+                // Make the texture not squished
+                hit.1 *= 0.2;
+                hits.push(hit);
+            }
+            if let Some(mut hit) = straight_line(!orientation, local_ray_pos, ray_dir, ray_grad, 1.0, [0.4, 0.6], map_pos_f) {
+                // Make the texture not squished
+                hit.1 *= 0.2;
+                hits.push(hit);
+            }
+        }
+        // SQUARE PILLAR
+        6 => {
+            return None;
+        }
+        // ROUND PILLAR
+        7 => {
+            return None;
+        }
+        // DIAGONAL
+        8 => {
+            let orientation = cell.flags & 0b00000001 == 0;
+            let positions = match orientation {
+                true  => [point![0.0, 0.0], point![1.0, 1.0]],
+                false => [point![1.0, 0.0], point![0.0, 1.0]],
+            };
+            hits.push_if_some(line_hit_2(local_ray_pos, ray_dir, ray_grad, positions, map_pos_f));
         }
         _ => { return None }
     }
@@ -178,7 +213,13 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
     }
 }
 
-
+fn straight_line(side: bool, ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>)
+    -> Option<HitPoint> {
+    match side {
+        false => x_line(ray_pos, ray_dir, ray_grad, intercept, line_bounds, map_pos),
+        true  => y_line(ray_pos, ray_dir, ray_grad, intercept, line_bounds, map_pos),
+    }
+}
 
 // A line on the X axis.
 fn x_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, y_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
