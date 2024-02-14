@@ -1,7 +1,7 @@
 use std::ops::Add;
 
 use nalgebra::{distance, point, Point2, Vector2};
-use rand::Rng;
+use rand::{thread_rng, Rng};
 
 use crate::game::{map::{Cell, DoorState}, Game};
 
@@ -15,7 +15,7 @@ pub fn calc_shape_hit_info(game: &Game, tile_index: usize, ray_gradient: Vector2
     // return None;
     let h = shape_hit(game, cell, tile_index, map_pos, start_pos, ray_gradient);
     if let Some((p, a, b)) = h {
-        return Some((distance(&p, &point![start_pos.x, start_pos.y]), a, b));
+        return Some((p, a, b));
     }
     /*
     // (distance, texture_along, brightness)
@@ -100,14 +100,14 @@ pub fn calc_shape_hit_info(game: &Game, tile_index: usize, ray_gradient: Vector2
     None
 }
 
-pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<usize>, ray_pos: Vector2<f64>, ray_dir: Vector2<f64>) -> Option<(Point2<f64>, f64, u8)>{
+pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<usize>, ray_pos: Vector2<f64>, ray_dir: Vector2<f64>) -> Option<(f64, f64, u8)>{
     let map_pos_f = point![map_pos.x as f64, map_pos.y as f64];
     // STILL need to make everything use points instead of Vector2.. so this will do for now
     let local_ray_pos = point![ray_pos.x - map_pos_f.x, ray_pos.y - map_pos_f.y];
     // Precalculated as it's probably a teeny bit faster that way
     let ray_grad = ray_dir.y / ray_dir.x;
 
-    let current_hit: HitPoint = None;
+    let mut hits: Vec<HitPoint> = Vec::with_capacity(1);
 
     match cell.kind {
         3 => {
@@ -117,11 +117,40 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
                 DoorState::Closing(a) => { 1.0 - a*2.0 }
                 DoorState::Opening(a) => { a*2.0 }
             };
-            line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![amount-1.0, 0.5], point![amount, 0.5]], map_pos_f)
+            
+            hits.push(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![amount-1.0, 0.6], point![amount, 0.6]], map_pos_f));
+            hits.push(line_hit_2(local_ray_pos, ray_dir, ray_grad, [point![amount-1.0, 0.4], point![amount, 0.4]], map_pos_f));
+            if let Some(mut edge) = y_line(local_ray_pos, ray_dir, ray_grad, amount, [0.4, 0.6], map_pos_f) {
+                edge.1 *= 0.2;
+                hits.push(Some(edge));
+            }
         }
-        _ => { None }
+        _ => { return None }
+    }
+
+    let hits: Vec<(Point2<f64>, f64, u8)> = hits.into_iter().flatten().collect();
+
+    if hits.is_empty() { return None; }
+    let start_p = na::point![ray_pos.x, ray_pos.y];
+
+    // If there's one hit, return that
+    if hits.len() == 1 {
+        return Some((na::distance(&start_p, &hits[0].0), hits[0].1, hits[0].2));
+    }
+    // If there are multiple, return the closest one
+    else {
+        let mut closest_hit = (f64::MAX, 0);
+        for (i, hit) in hits.iter().enumerate() {
+            let dist = na::distance(&start_p, &hit.0);
+            if dist < closest_hit.0 {
+                closest_hit = (dist, i);
+            }
+        }
+        return Some((na::distance(&start_p, &hits[closest_hit.1].0), hits[closest_hit.1].1, hits[closest_hit.1].2));
     }
 }
+
+
 
 // A line on the X axis.
 fn x_line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, y_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> HitPoint {
