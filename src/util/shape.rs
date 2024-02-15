@@ -112,6 +112,25 @@ impl PushIfSome for Vec<HitPoint> {
     }
 }
 
+trait SetIfSmaller {
+    fn set_if_smaller(&mut self, pos: Point2<f64>, other: Option<HitPoint>);
+}
+
+impl SetIfSmaller for Option<HitPoint> {
+    fn set_if_smaller(&mut self, pos: Point2<f64>, other: Option<HitPoint>) {
+        if other.is_none() { return; }
+        if self.is_none() {
+            *self = other;
+            return;
+        }
+        let my_dist    = na::distance(&pos, &self .unwrap().0);
+        let other_dist = na::distance(&pos, &other.unwrap().0);
+        if other_dist < my_dist {
+            *self = other;
+        }
+    }
+}
+
 pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<usize>, ray_pos: Vector2<f64>, ray_dir: Vector2<f64>) -> Option<(f64, f64, u8)>{
     let map_pos_f = point![map_pos.x as f64, map_pos.y as f64];
     // STILL need to make everything use points instead of Vector2.. so this will do for now
@@ -120,6 +139,9 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
     let ray_grad = ray_dir.y / ray_dir.x;
 
     let mut hits: Vec<HitPoint> = Vec::with_capacity(1);
+
+    let mut big_h: Option<HitPoint> = None;
+    let ray_pos_p = na::point![ray_pos.x, ray_pos.y];
 
     match cell.kind {
         // DOOR
@@ -139,46 +161,46 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
             
             let orientation = cell.flags & 0b00000001 == 0;
             // Two long sides
-            hits.push_if_some(line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.6, door_sides, map_pos_f));
-            hits.push_if_some(line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.4, door_sides, map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.6, door_sides, map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.4, door_sides, map_pos_f));
             // Short bit
             // TODO: Make a better way to manipulate the values maybe..
             if let Some(mut hit) = line_axis(!orientation, local_ray_pos, ray_dir, ray_grad, door_sides[0], [0.4, 0.6], map_pos_f) {
                 // Make the texture not squished
                 hit.1 *= 0.2;
-                hits.push(hit);
+                big_h.set_if_smaller(ray_pos_p, Some(hit));
             }
         }
         // THIN WALL
         4 => {
             let orientation = cell.flags & 0b00000001 == 0;
-            hits.push_if_some(line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.5, [0.0, 1.0], map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.5, [0.0, 1.0], map_pos_f));
         }
         // THICK WALL
         5 => {
             let orientation = cell.flags & 0b00000001 == 0;
             // Long bits
-            hits.push_if_some(line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.6, [0.0, 1.0], map_pos_f));
-            hits.push_if_some(line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.4, [0.0, 1.0], map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.6, [0.0, 1.0], map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(orientation, local_ray_pos, ray_dir, ray_grad, 0.4, [0.0, 1.0], map_pos_f));
             // Short bits
             // TODO: Make a better way to manipulate the values maybe..
             if let Some(mut hit) = line_axis(!orientation, local_ray_pos, ray_dir, ray_grad, 0.0, [0.4, 0.6], map_pos_f) {
                 // Make the texture not squished
                 hit.1 *= 0.2;
-                hits.push(hit);
+                big_h.set_if_smaller(ray_pos_p, Some(hit));
             }
             if let Some(mut hit) = line_axis(!orientation, local_ray_pos, ray_dir, ray_grad, 1.0, [0.4, 0.6], map_pos_f) {
                 // Make the texture not squished
                 hit.1 *= 0.2;
-                hits.push(hit);
+                big_h.set_if_smaller(ray_pos_p, Some(hit));
             }
         }
         // SQUARE PILLAR
         6 => {
-            hits.push_if_some(line_axis(true , local_ray_pos, ray_dir, ray_grad, 0.25, [0.25, 0.75], map_pos_f));
-            hits.push_if_some(line_axis(true , local_ray_pos, ray_dir, ray_grad, 0.75, [0.25, 0.75], map_pos_f));
-            hits.push_if_some(line_axis(false, local_ray_pos, ray_dir, ray_grad, 0.25, [0.25, 0.75], map_pos_f));
-            hits.push_if_some(line_axis(false, local_ray_pos, ray_dir, ray_grad, 0.75, [0.25, 0.75], map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(true , local_ray_pos, ray_dir, ray_grad, 0.25, [0.25, 0.75], map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(true , local_ray_pos, ray_dir, ray_grad, 0.75, [0.25, 0.75], map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(false, local_ray_pos, ray_dir, ray_grad, 0.25, [0.25, 0.75], map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(false, local_ray_pos, ray_dir, ray_grad, 0.75, [0.25, 0.75], map_pos_f));
         }
         // ROUND PILLAR
         7 => {
@@ -191,29 +213,31 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
                 true  => [point![0.0, 0.0], point![1.0, 1.0]],
                 false => [point![1.0, 0.0], point![0.0, 1.0]],
             };
-            hits.push_if_some(line(local_ray_pos, ray_dir, ray_grad, positions, map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line(local_ray_pos, ray_dir, ray_grad, positions, map_pos_f));
         }
         _ => { return None }
     }
 
-    if hits.is_empty() { return None; }
-    let start_p = na::point![ray_pos.x, ray_pos.y];
+    // if hits.is_empty() { return None; }
 
-    // If there's one hit, return that
-    if hits.len() == 1 {
-        return Some((na::distance(&start_p, &hits[0].0), hits[0].1, hits[0].2));
-    }
-    // If there are multiple, return the closest one
-    else {
-        let mut closest_hit = (f64::MAX, 0);
-        for (i, hit) in hits.iter().enumerate() {
-            let dist = na::distance(&start_p, &hit.0);
-            if dist < closest_hit.0 {
-                closest_hit = (dist, i);
-            }
-        }
-        return Some((na::distance(&start_p, &hits[closest_hit.1].0), hits[closest_hit.1].1, hits[closest_hit.1].2));
-    }
+    // // If there's one hit, return that
+    // if hits.len() == 1 {
+    //     return Some((na::distance(&start_p, &hits[0].0), hits[0].1, hits[0].2));
+    // }
+    // // If there are multiple, return the closest one
+    // else {
+    //     let mut closest_hit = (f64::MAX, 0);
+    //     for (i, hit) in hits.iter().enumerate() {
+    //         let dist = na::distance(&start_p, &hit.0);
+    //         if dist < closest_hit.0 {
+    //             closest_hit = (dist, i);
+    //         }
+    //     }
+    //     return Some((na::distance(&start_p, &hits[closest_hit.1].0), hits[closest_hit.1].1, hits[closest_hit.1].2));
+    // }
+    if big_h.is_none() { return None; }
+    return Some((na::distance(&ray_pos_p, &big_h.unwrap().0), big_h.unwrap().1, big_h.unwrap().2));
+
 }
 
 fn quad(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, intercept: f64, rect_start: Point2<f64>) {

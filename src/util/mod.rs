@@ -66,7 +66,6 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
 
         // Get the tile at the current position, check it out
         let tile_index = game.coord_to_index(&map_pos.x, &map_pos.y);
-        let tile = game.map.get(tile_index).unwrap();
         let t = game.map_m.get(tile_index);
         match t.kind {
             // Air | Light, obviously don't want to render this
@@ -89,7 +88,8 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
             }
             // Other shape...
             _ => {
-                let shape_result = calc_shape_hit_info(game, tile_index, dir, map_pos, start_pos, game.map_m.get(tile_index));
+                // let shape_result = calc_shape_hit_info(game, tile_index, dir, map_pos, start_pos, game.map_m.get(tile_index));
+                let shape_result = shape::shape_hit(game, t, tile_index, map_pos, start_pos, dir);
                 if let Some((distance, texture_along, brightness)) = shape_result {
                     let perp_dist = distance*dir.angle(&game.player.dir).cos();
                     return Some((tile_index, perp_dist, texture_along, brightness, side));

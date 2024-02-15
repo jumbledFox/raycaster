@@ -133,6 +133,10 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: isize, draw_end: isize, col: &[u8; 4]) {
     // TODO: this shit
 
+    // for s in draw_start.clamp(0, HEIGHT as isize) as usize..draw_end.clamp(0, HEIGHT as isize) as usize {
+    //     let pos = 1*(w)+WIDTH_USIZE * s;
+    //     screen[pos*4..pos*4+4].copy_from_slice(col);
+    // }
     let horizontal = (along * game.texture_size.0 as f64) as usize;
 
     let mut texture_indexes: Vec<usize> = Vec::with_capacity(game.texture_size.1);
