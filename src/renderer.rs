@@ -56,42 +56,10 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             let draw_end   =  lineheight / 2 + h / 2 + (head_height - game.player.pitch) as isize;
             // if draw_end > h { draw_end = h };
 
-            // Texture shiz
-            // How far along the texture is
-            // let along = match side {
-            //     util::RaycastSide::X => hit_pos.y,
-            //     util::RaycastSide::Y => hit_pos.x,
-            // }.rem_euclid(1.0);
-            //if w != WIDTH / 2 {println!("{:?}", along)}
-            //let mut color = game.texture[(along * game.texture_size.0 as f64) as usize + game.texture_size.0*5];
-            //println!("{:?}", along);
-
             // Color stuff
             // let mut color = get_col(game.map[cell]-1);
             let mut color = [255; 4];
-            // if side == util::RaycastSide::Y {
-            //     color[0] = (color[0] as f32 * 0.7) as u8;
-            //     color[1] = (color[1] as f32 * 0.7) as u8;
-            //     color[2] = (color[2] as f32 * 0.7) as u8;
-            // }
 
-            // Find out the position of the cell in front of the current face, to get the lightmap info.
-            // We don't need to do any bounds checking here because the map should always be enclosed.
-            // let offset: isize = match side {
-            //     RaycastSide::Y => {
-            //         match ray_direction.y.is_sign_positive() {
-            //             // If it's positive, get the lightmap ahead
-            //             true  => { -(game.map_width as isize) },
-            //             false => {   game.map_width as isize  },
-            //         }
-            //     },
-            //     RaycastSide::X => {
-            //         match ray_direction.x.is_sign_positive() {
-            //             true  => { -1 },
-            //             false => {  1 },
-            //         }
-            //     },
-            // };
             color[0] = (color[0] as f32 * (brightness as f32 / 255.0)) as u8;
             color[1] = (color[1] as f32 * (brightness as f32 / 255.0)) as u8;
             color[2] = (color[2] as f32 * (brightness as f32 / 255.0)) as u8;
@@ -133,29 +101,29 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: isize, draw_end: isize, col: &[u8; 4]) {
     // TODO: this shit
 
-    // for s in draw_start.clamp(0, HEIGHT as isize) as usize..draw_end.clamp(0, HEIGHT as isize) as usize {
-    //     let pos = 1*(w)+WIDTH_USIZE * s;
-    //     screen[pos*4..pos*4+4].copy_from_slice(col);
-    // }
-    let horizontal = (along * game.texture_size.0 as f64) as usize;
-
-    let mut texture_indexes: Vec<usize> = Vec::with_capacity(game.texture_size.1);
-    for h in 0..game.texture_size.1 {
-        texture_indexes.push(h*game.texture_size.0 + horizontal);
-    }
     for s in draw_start.clamp(0, HEIGHT as isize) as usize..draw_end.clamp(0, HEIGHT as isize) as usize {
-        // let travelled = (((s-draw_start) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
-        //let travelled1 = (((s as isize-draw_start as usize) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
-        let travelled = (((s as isize -draw_start)*game.texture_size.0 as isize) / ((draw_end-draw_start))).clamp(0, HEIGHT as isize) as usize;
-
         let pos = 1*(w)+WIDTH_USIZE * s;
-
-        let mut c = game.texture.get(texture_indexes[travelled]).unwrap_or(&[0xFF, 0x00, 0xFF, 0xFF]).clone();
-        c[0] = ((c[0] as f32 / 255.0)*(col[0] as f32)) as u8;
-        c[1] = ((c[1] as f32 / 255.0)*(col[1] as f32)) as u8;
-        c[2] = ((c[2] as f32 / 255.0)*(col[2] as f32)) as u8;
-        screen[pos*4..pos*4+4].copy_from_slice(&c);
+        screen[pos*4..pos*4+4].copy_from_slice(col);
     }
+    // let horizontal = (along * game.texture_size.0 as f64) as usize;
+
+    // let mut texture_indexes: Vec<usize> = Vec::with_capacity(game.texture_size.1);
+    // for h in 0..game.texture_size.1 {
+    //     texture_indexes.push(h*game.texture_size.0 + horizontal);
+    // }
+    // for s in draw_start.clamp(0, HEIGHT as isize) as usize..draw_end.clamp(0, HEIGHT as isize) as usize {
+    //     // let travelled = (((s-draw_start) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
+    //     //let travelled1 = (((s as isize-draw_start as usize) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
+    //     let travelled = (((s as isize -draw_start)*game.texture_size.0 as isize) / ((draw_end-draw_start))).clamp(0, HEIGHT as isize) as usize;
+
+    //     let pos = 1*(w)+WIDTH_USIZE * s;
+
+    //     let mut c = game.texture.get(texture_indexes[travelled]).unwrap_or(&[0xFF, 0x00, 0xFF, 0xFF]).clone();
+    //     c[0] = ((c[0] as f32 / 255.0)*(col[0] as f32)) as u8;
+    //     c[1] = ((c[1] as f32 / 255.0)*(col[1] as f32)) as u8;
+    //     c[2] = ((c[2] as f32 / 255.0)*(col[2] as f32)) as u8;
+    //     screen[pos*4..pos*4+4].copy_from_slice(&c);
+    // }
 }
 
 // Draws the map on to the screen
