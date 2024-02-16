@@ -27,15 +27,6 @@ impl Texture {
             rotated_image[index..index+3].clone_from_slice(pixel);
         }
 
-        let along = 0.88;
-        let column: usize = (along * (width-1) as f64).round() as usize; // TODO: Don't use 'as' here
-
-        let slice_begin = ( column    * height) * 3;
-        let slice_end   = ((column+1) * height) * 3;
-        let s = &rotated_image[slice_begin..slice_end];
-
-        println!("column: {:?}\nslice_begin: {:?}\nslice_end: {:?}\nslice: {:?}", column, slice_begin, slice_end, s);
-
         Texture { data: rotated_image, width, height }
     }
 

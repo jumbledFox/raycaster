@@ -5,6 +5,7 @@ use crate::{WIDTH, HEIGHT, WIDTH_USIZE, HEIGHT_USIZE, na, Vector2, util, game::{
 use lerp::num_traits::CheckedShr;
 use na::coordinates::X;
 use pixels_primitives;
+use rand::{thread_rng, Rng};
 
 const GRID_SIZE: u32 = 12;
 const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this 
@@ -87,7 +88,6 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             color[0] = (color[0] / 16) * (light_level + 1);
             color[1] = (color[1] / 16) * (light_level + 1);
             color[2] = (color[2] / 16) * (light_level + 1);
-            //if w == 0 {println!("{:?}  {:?}", color, light_level)};
 
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
             draw_slice(screen, game, w as usize, texture_along, line_start, line_end, &color);
@@ -106,51 +106,33 @@ fn draw_slice(screen: &mut [u8], game: &Game, screen_column: usize, along: f64, 
     let draw_start = line_start.clamp(0, HEIGHT as isize) as usize;
     let draw_end   = line_end  .clamp(0, HEIGHT as isize) as usize;
 
-    let tex = &game.textures[0];
+    let tex = &game.textures[1];
 
     let column: usize = (along.rem_euclid(1.0) * (tex.width) as f64).floor() as usize; // TODO: Don't use 'as' here
 
     let slice_begin = ( column    * tex.height) * 3;
     let slice_end   = ((column+1) * tex.height) * 3;
     let column_slice = &tex.data[slice_begin..slice_end];
+    // Make a vec out of it so we can recolour it
+    let mut column_vec = Vec::from(column_slice);
+    // Recolour the whole column
+    for (i, p) in column_vec.iter_mut().enumerate() {
+        *p = ((u16::from(*p) * u16::from(col[i % 3])) / 255) as u8;
+    }
 
     for h in draw_start..draw_end {
         // How far up the column we are
-        let ascent = (line_end - line_start) as usize * h;
+        // Not a fan of all the floats and casting, there's gotta be a way to do this with just ints, but oh well..!
+        let ascent = (h as f32 - line_start as f32) / (line_end as f32 - line_start as f32);
 
-        let row = 0*3;
-        let pixel = &column_slice[row..row+3];
+        let row = (ascent * tex.height as f32).floor() as usize*3;
+        let mut pixel = [0, 0, 0, 255];
+        pixel[0..3].copy_from_slice(&column_vec[row..row+3]);
+        pixel[3] = col[3];
 
         let pos = 1*(screen_column)+WIDTH_USIZE * h;
-        // screen[pos*4..pos*4+3].copy_from_slice(pixel);
-        // screen[pos*4+3] = 255;
-        screen[pos*4..pos*4+4].copy_from_slice(&[ascent as u8, 0, 0, 255]);
+        screen[pos*4..pos*4+4].copy_from_slice(&pixel);
     }
-
-    // TODO: this shit
-    // for s in draw_start..draw_end {
-    //     let pos = 1*(w)+WIDTH_USIZE * s;
-    //     screen[pos*4..pos*4+4].copy_from_slice(col);
-    // }
-    // let horizontal = (along * game.texture_size.0 as f64) as usize;
-
-    // let mut texture_indexes: Vec<usize> = Vec::with_capacity(game.texture_size.1);
-    // for h in 0..game.texture_size.1 {
-    //     texture_indexes.push(h*game.texture_size.0 + horizontal);
-    // }
-    // for s in draw_start.clamp(0, HEIGHT as isize) as usize..draw_end.clamp(0, HEIGHT as isize) as usize {
-    //     // let travelled = (((s-draw_start) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
-    //     //let travelled1 = (((s as isize-draw_start as usize) as f32 / (draw_end-draw_start) as f32) * game.texture_size.0 as f32) as usize;
-    //     let travelled = (((s as isize -draw_start)*game.texture_size.0 as isize) / ((draw_end-draw_start))).clamp(0, HEIGHT as isize) as usize;
-
-    //     let pos = 1*(w)+WIDTH_USIZE * s;
-
-    //     let mut c = game.texture.get(texture_indexes[travelled]).unwrap_or(&[0xFF, 0x00, 0xFF, 0xFF]).clone();
-    //     c[0] = ((c[0] as f32 / 255.0)*(col[0] as f32)) as u8;
-    //     c[1] = ((c[1] as f32 / 255.0)*(col[1] as f32)) as u8;
-    //     c[2] = ((c[2] as f32 / 255.0)*(col[2] as f32)) as u8;
-    //     screen[pos*4..pos*4+4].copy_from_slice(&c);
-    // }
 }
 
 // Draws the map on to the screen
