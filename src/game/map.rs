@@ -7,14 +7,14 @@ use nalgebra::Vector2;
 // One byte for kind
 // One byte for any flags
 pub struct Cell {
-    pub texture_index: u8,
     pub kind: u8,
     pub flags: u8,
+    pub texture_index: u8,
 }
 
 impl Cell {
-    pub fn new(texture_index: u8, kind: u8, flags: u8) -> Cell {
-        Cell { texture_index, kind, flags }
+    pub fn new(kind: u8, flags: u8, texture_index: u8) -> Cell {
+        Cell { kind, flags, texture_index }
     }
 }
 
@@ -43,6 +43,7 @@ pub struct Map {
     pub width : usize,
     pub height: usize,
     pub doors: HashMap<usize, DoorState>,
+    pub lightmap: Vec<u8>,
 }
 
 impl Map {
@@ -63,31 +64,31 @@ impl Map {
         for (i, p) in img.pixels().enumerate() {
             cells.push(match p.0 {
                 // Solid - white
-                [255, 255, 255] => Cell::new(0, 1, 0),
+                [255, 255, 255] => Cell::new(1, 0, 0),
                 // Light
-                [255, 255,   0] => Cell::new(0, 2, 0b_11_11_11_00),
+                [255, 255,   0] => Cell::new(2, 0b_11_11_11_00, 0),
                 // Door NS
                 [127,  81,  25] => {
                     doors.insert(i, DoorState::Closed);
-                    Cell::new(0, 3, 0b000000_00)
+                    Cell::new(3, 0b000000_00, 1)
                 }
                 // Door WE
                 [204, 130,  40] => {
                     doors.insert(i, DoorState::Closed);
-                    Cell::new(0, 3, 0b000000_11)
+                    Cell::new(3, 0b000000_11, 1)
                 }
                 // Thick wall NS
-                [188,  96, 188] => Cell::new(0, 5, 0b0000000_0),
+                [188,  96, 188] => Cell::new(5, 0b0000000_0, 0),
                 // Thick wall EW
-                [255, 128, 255] => Cell::new(0, 5, 0b0000000_1),
+                [255, 128, 255] => Cell::new(5, 0b0000000_1, 0),
                 // Square pillar
-                [  0, 174, 255] => Cell::new(0, 6, 0b00000000),
+                [  0, 174, 255] => Cell::new(6, 0b00000000,  0),
                 // Round pillar
-                [  0,   0, 255] => Cell::new(0, 7, 0b00000000),
+                [  0,   0, 255] => Cell::new(7, 0b00000000,  0),
                 // Diagonal TL BR
-                [  0, 128,   0] => Cell::new(0, 8, 0b0000000_0),
+                [  0, 128,   0] => Cell::new(8, 0b0000000_0, 0),
                 // Diagonal TR BL
-                [  0, 255,   0] => Cell::new(0, 8, 0b0000000_1),
+                [  0, 255,   0] => Cell::new(8, 0b0000000_1, 0),
 
                 // Setting positions
                 // Player position
@@ -100,6 +101,6 @@ impl Map {
                 _ => Cell::new(0, 0, 0),
             });
         }
-        Map {cells, width, height, doors}
+        Map {cells, width, height, doors, lightmap: vec![]}
     }
 }

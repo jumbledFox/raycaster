@@ -16,8 +16,8 @@ type RaycastResult = Option<(usize, f64, f64, u8, u8)>;
 
 pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64, tell_info: bool) -> RaycastResult {
     // If the ray is out of bounds, don't bother.
-    if  start_pos.x < 0.0 || start_pos.x > game.map_width  as f64 ||
-        start_pos.y < 0.0 || start_pos.y > game.map_height as f64 {
+    if  start_pos.x < 0.0 || start_pos.x > game.map_m.width  as f64 ||
+        start_pos.y < 0.0 || start_pos.y > game.map_m.height as f64 {
         return None;
     }
 
@@ -59,7 +59,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
 
     loop {
         // If out of bounds, stop checking
-        if map_pos.x >= game.map_width || map_pos.y >= game.map_height { break; }
+        if map_pos.x >= game.map_m.width || map_pos.y >= game.map_m.height { break; }
 
         // If the distance is too large, stop checking
         if distance > max_dist { break; }

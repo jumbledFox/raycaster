@@ -15,29 +15,24 @@ pub struct Game {
     pub player: Player,
     pub map_m: Map,
     pub textures: Vec<Texture>,
-    pub map: Vec<u8>,
     pub lightmap: Vec<u8>,
-    pub map_width: usize,
-    pub map_height: usize,
+    // pub map: Vec<u8>,
+    // pub map_width: usize,
+    // pub map_height: usize,
 }
 
 impl Game {
     pub fn coord_to_index(&self, x: &usize, y: &usize) -> usize {
-        y * self.map_width + x
+        y * self.map_m.width + x
     }
     pub fn index_to_coord(&self, index: usize) -> (usize, usize) {
-        (index % self.map_width, index / self.map_width)
+        (index % self.map_m.width, index / self.map_m.width)
     }
 
     pub fn new() -> Game {
-        let t1 = Texture::from_file("res/bricks.png");
-        let t2 = Texture::from_file("res/warning.png");
+        let t1 = Texture::from_file("res/warning.png");
+        let t2 = Texture::from_file("res/doormetal.png");
 
-        let map_info = Game::load_map(String::from("res/map3.png"));
-        let map = map_info.0;
-        let map_width  = map_info.1;
-        let map_height = map_info.2;
-        let player_spawn = map_info.3;
         /*
         let map_width  = 30;
         let map_height = 30;
@@ -65,55 +60,23 @@ impl Game {
         */
 
         let mut g = Game {
-            player: Player::new(player_spawn),
+            player: Player::new(Vector2::new(13.0, 4.0)),
             map_m: Map::load(String::from("res/map3.png")),
             textures: vec![t1, t2],
-            map, map_width, map_height,
             lightmap: vec![],
         };
         g.calculate_lightmap();
         g
     }
 
-    fn load_map(image_path: String) -> (Vec<u8>, usize, usize, Vector2<f64>) {
-        let im = image::open(image_path).unwrap().to_rgb8();
-        let width  = im.width()  as usize;
-        let height = im.height() as usize;
-        let mut player_spawn = Vector2::new(0.0, 0.0);
-        let mut map = vec![0; width*height];
-        for (i, p) in im.pixels().enumerate() {
-            map[i] = match p.0 {
-                [255, 255,   0] => 2, // light
-                [255, 255, 255] => 1, // wall
-                [255, 128, 255] => 3, // door -
-                [255,   0,   0] => 4, // wall - red
-                [190, 190, 190] => 5, // wall - orange
-                [  0, 128,   0] => 6, // diagonal \
-                [  6, 255,   4] => 7, // diagonal /
-                [  0,   0, 255] => 8, // cylinder
-
-                [255,   0, 255] => {
-                    player_spawn.x = (i % width) as f64 + 0.5;
-                    player_spawn.y = (i / width) as f64 + 0.5;
-                    0 }, // Spawn
-                _ => 0,
-            };
-            match p.0 {
-                [254,   0, 255] => {},
-                _ => {}
-            }
-        }
-        (map, width, height, player_spawn)
-    }
-
     // TODO: Maybe implement something like this:
     // https://www.reddit.com/r/Minecraft/comments/8swb5s/comment/e13uu9m/?utm_source=share&utm_medium=web2x&context=3
     pub fn calculate_lightmap(&mut self) {
-        self.lightmap = vec![0; self.map_width*self.map_height];
+        self.lightmap = vec![0; self.map_m.width*self.map_m.width];
         // Find where all of the light are
-        let light_positions: Vec<usize> = self.map.iter()
+        let light_positions: Vec<usize> = self.map_m.cells.iter()
             .enumerate()
-            .filter(|(_, item)| **item == 2)
+            .filter(|(_, item)| item.kind == 2)
             .map(|(index, _)| index)
             .collect();
         // For each light in the scene
@@ -145,8 +108,8 @@ impl Game {
                         let n_y = coord.1.checked_add_signed(n.1);
                         // Skip if neighbour out of bounds
                         if  n_x.is_none() || n_y.is_none() ||
-                            n_x.is_some_and(|j| j >= self.map_width) ||
-                            n_y.is_some_and(|j| j >= self.map_height)
+                            n_x.is_some_and(|j| j >= self.map_m.width) ||
+                            n_y.is_some_and(|j| j >= self.map_m.height)
                             { continue; }
 
                         let neighbour_index = self.coord_to_index(&n_x.unwrap(), &n_y.unwrap());
