@@ -49,12 +49,15 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             // let mut draw_end = lineheight / 2.0 + h / 2.0 + head_height - game.player.pitch;
             // if draw_end > h { draw_end = h };
 
+            // TODO: Make this better
             let h = HEIGHT as isize;
             let lineheight = (h as f64 / (distance*fov)) as isize;// * (1.0/ASPECT_RATIO);
-            let draw_start = -lineheight / 2 + h / 2 + (head_height - game.player.pitch) as isize;
+            let line_start = -lineheight / 2 + h / 2 + (head_height - game.player.pitch) as isize;
             // if draw_start < 0 { draw_start = 0 };
-            let draw_end   =  lineheight / 2 + h / 2 + (head_height - game.player.pitch) as isize;
+            let line_end   =  lineheight / 2 + h / 2 + (head_height - game.player.pitch) as isize;
             // if draw_end > h { draw_end = h };
+
+            
 
             // Color stuff
             // let mut color = get_col(game.map[cell]-1);
@@ -87,7 +90,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             //if w == 0 {println!("{:?}  {:?}", color, light_level)};
 
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
-            draw_slice(screen, game, w as usize, texture_along, draw_start, draw_end, &color);
+            draw_slice(screen, game, w as usize, texture_along, line_start, line_end, &color);
 
             if w == WIDTH / 2 { game.player.mid_ray_dist = distance }
         }
@@ -98,13 +101,37 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
 // TODO:
 // Draws a slice of a raycast
-fn draw_slice(screen: &mut [u8], game: &Game, w: usize, along: f64, draw_start: isize, draw_end: isize, col: &[u8; 4]) {
-    // TODO: this shit
+fn draw_slice(screen: &mut [u8], game: &Game, screen_column: usize, along: f64, line_start: isize, line_end: isize, col: &[u8; 4]) {
+    // TODO: better way to do this
+    let draw_start = line_start.clamp(0, HEIGHT as isize) as usize;
+    let draw_end   = line_end  .clamp(0, HEIGHT as isize) as usize;
 
-    for s in draw_start.clamp(0, HEIGHT as isize) as usize..draw_end.clamp(0, HEIGHT as isize) as usize {
-        let pos = 1*(w)+WIDTH_USIZE * s;
-        screen[pos*4..pos*4+4].copy_from_slice(col);
+    let tex = &game.textures[0];
+
+    let column: usize = (along.rem_euclid(1.0) * (tex.width) as f64).floor() as usize; // TODO: Don't use 'as' here
+
+    let slice_begin = ( column    * tex.height) * 3;
+    let slice_end   = ((column+1) * tex.height) * 3;
+    let column_slice = &tex.data[slice_begin..slice_end];
+
+    for h in draw_start..draw_end {
+        // How far up the column we are
+        let ascent = (line_end - line_start) as usize * h;
+
+        let row = 0*3;
+        let pixel = &column_slice[row..row+3];
+
+        let pos = 1*(screen_column)+WIDTH_USIZE * h;
+        // screen[pos*4..pos*4+3].copy_from_slice(pixel);
+        // screen[pos*4+3] = 255;
+        screen[pos*4..pos*4+4].copy_from_slice(&[ascent as u8, 0, 0, 255]);
     }
+
+    // TODO: this shit
+    // for s in draw_start..draw_end {
+    //     let pos = 1*(w)+WIDTH_USIZE * s;
+    //     screen[pos*4..pos*4+4].copy_from_slice(col);
+    // }
     // let horizontal = (along * game.texture_size.0 as f64) as usize;
 
     // let mut texture_indexes: Vec<usize> = Vec::with_capacity(game.texture_size.1);

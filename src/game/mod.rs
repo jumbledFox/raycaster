@@ -1,5 +1,6 @@
 pub mod player;
 pub mod map;
+pub mod texture;
 
 use nalgebra::Vector2;
 
@@ -8,11 +9,12 @@ use map::Map;
 
 use image;
 
-use self::map::Cell;
+use self::{map::Cell, texture::Texture};
 
 pub struct Game {
     pub player: Player,
     pub map_m: Map,
+    pub textures: Vec<Texture>,
     pub map: Vec<u8>,
     pub lightmap: Vec<u8>,
     pub texture: Vec<[u8; 4]>,
@@ -32,6 +34,8 @@ impl Game {
     pub fn new() -> Game {
         let im = image::open("res/bricks_blue.png").unwrap().to_rgba8();
         let texture: Vec<u8> = im.clone().into_raw();
+
+        let t = Texture::from_file("res/funky_test_tex.png");
 
         let map_info = Game::load_map(String::from("res/map3.png"));
         let map = map_info.0;
@@ -69,6 +73,7 @@ impl Game {
             texture: texture.chunks_exact(4).map(|chunk| chunk.try_into().unwrap()).collect(),
             texture_size: (im.width() as usize, im.height() as usize),
             map_m: Map::load(String::from("res/map3.png")),
+            textures: vec![t],
             map, map_width, map_height,
             lightmap: vec![],
         };
