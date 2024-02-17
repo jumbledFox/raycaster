@@ -68,7 +68,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             color[1] = (color[1] as f32 * (brightness as f32 / 255.0)) as u8;
             color[2] = (color[2] as f32 * (brightness as f32 / 255.0)) as u8;
 
-            let offset = match game.map_m.get(cell).kind == 1 {
+            let offset = match game.map.get(cell).kind == 1 {
                 true => {
                     if side == 0 {
                         match ray_direction.x.is_sign_positive() {
@@ -77,8 +77,8 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
                         }
                     } else {
                         match ray_direction.y.is_sign_positive() {
-                            true  => -(game.map_m.width as isize),
-                            false =>   game.map_m.width as isize,
+                            true  => -(game.map.width as isize),
+                            false =>   game.map.width as isize,
                         }
                     }
                 }
@@ -90,7 +90,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             color[2] = (color[2] / 16) * (light_level + 1);
 
             // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
-            draw_slice(screen, game, w as usize, texture_along, line_start, line_end, &color, game.map_m.cells[cell].texture_index.into());
+            draw_slice(screen, game, w as usize, texture_along, line_start, line_end, &color, game.map.cells[cell].texture_index.into());
 
             if w == WIDTH / 2 { game.player.mid_ray_dist = distance }
         }
@@ -137,35 +137,35 @@ fn draw_slice(screen: &mut [u8], game: &Game, screen_column: usize, along: f64, 
 
 // Draws the map on to the screen
 pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
-    let render_offset_w = WIDTH_USIZE  / 2 - (game.map_m.width  * cell_size) / 2;
-    let render_offset_h = HEIGHT_USIZE / 2 - (game.map_m.height * cell_size) / 2;
+    let render_offset_w = WIDTH_USIZE  / 2 - (game.map.width  * cell_size) / 2;
+    let render_offset_h = HEIGHT_USIZE / 2 - (game.map.height * cell_size) / 2;
     let render_offset = Vector2::new(render_offset_w as f64, render_offset_h as f64);
-    let map_size = Vector2::new((game.map_m.width * cell_size) as f64, (game.map_m.height * cell_size) as f64);
+    let map_size = Vector2::new((game.map.width * cell_size) as f64, (game.map.height * cell_size) as f64);
 
-    for i in 0..game.map_m.width {
+    for i in 0..game.map.width {
         draw_line(screen,
         Vector2::new((i*cell_size) as f64, 0.0) + render_offset,
-        Vector2::new((i*cell_size) as f64, (game.map_m.height * cell_size) as f64) + render_offset,
+        Vector2::new((i*cell_size) as f64, (game.map.height * cell_size) as f64) + render_offset,
         &[0xAA, 0xAA, 0xAA, 0xFF]);
     }
-    for i in 0..game.map_m.height {
+    for i in 0..game.map.height {
         draw_line(screen,
         Vector2::new(0.0, (i*cell_size) as f64) + render_offset,
-        Vector2::new((game.map_m.width * cell_size) as f64, (i*cell_size) as f64) + render_offset,
+        Vector2::new((game.map.width * cell_size) as f64, (i*cell_size) as f64) + render_offset,
         &[0xAA, 0xAA, 0xAA, 0xFF]);
     }
 
-    // for (i, &cell) in game.map_m.cells.clo.enumerate() {
+    // for (i, &cell) in game.map.cells.clo.enumerate() {
     //     if cell.kind == 0 { continue; }
-    //     let x = (i as usize % game.map_m.width) * cell_size + render_offset_w;
-    //     let y = (i as usize / game.map_m.width) * cell_size + render_offset_h;
+    //     let x = (i as usize % game.map.width) * cell_size + render_offset_w;
+    //     let y = (i as usize / game.map.width) * cell_size + render_offset_h;
     //     draw_rect(screen, x, y, x+cell_size, y+cell_size, &get_col(cell.kind.saturating_sub(1)));
     // }
     
 
     pixels_primitives::circle_filled(screen, WIDTH as i32,
-        game.player.pos.x.clamp(0.0, game.map_m.width  as f64) * cell_size as f64 + render_offset.x,
-        game.player.pos.y.clamp(0.0, game.map_m.height as f64) * cell_size as f64 + render_offset.y,
+        game.player.pos.x.clamp(0.0, game.map.width  as f64) * cell_size as f64 + render_offset.x,
+        game.player.pos.y.clamp(0.0, game.map.height as f64) * cell_size as f64 + render_offset.y,
         cell_size as f64 / 2.0, &[0x00, 0xFF, 0x00, 0xFF]);
     draw_line(screen,
          game.player.pos * cell_size as f64 + render_offset,
@@ -176,12 +176,12 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
         game.player.lineposb * cell_size as f64 + render_offset,
         &[0xFF, 0x00, 0xFF, 0xFF]);
     pixels_primitives::circle_filled(screen, WIDTH as i32,
-        game.player.lineposa.x.clamp(0.0, game.map_m.width  as f64) * cell_size as f64 + render_offset.x,
-        game.player.lineposa.y.clamp(0.0, game.map_m.height as f64) * cell_size as f64 + render_offset.y,
+        game.player.lineposa.x.clamp(0.0, game.map.width  as f64) * cell_size as f64 + render_offset.x,
+        game.player.lineposa.y.clamp(0.0, game.map.height as f64) * cell_size as f64 + render_offset.y,
         cell_size as f64 / 3.0, &[0xFF, 0x00, 0x00, 0xFF]);
     pixels_primitives::circle_filled(screen, WIDTH as i32,
-        game.player.lineposb.x.clamp(0.0, game.map_m.width  as f64) * cell_size as f64 + render_offset.x,
-        game.player.lineposb.y.clamp(0.0, game.map_m.height as f64) * cell_size as f64 + render_offset.y,
+        game.player.lineposb.x.clamp(0.0, game.map.width  as f64) * cell_size as f64 + render_offset.x,
+        game.player.lineposb.y.clamp(0.0, game.map.height as f64) * cell_size as f64 + render_offset.y,
         cell_size as f64 / 3.0, &[0x00, 0x00, 0xFF, 0xFF]);
 }
 

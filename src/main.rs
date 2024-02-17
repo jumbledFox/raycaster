@@ -124,7 +124,7 @@ fn main() {
             }
 
             // Updating doors
-            for d in g.map_m.doors.values_mut() {
+            for d in g.map.doors.values_mut() {
                 *d = match *d {
                     // If the door is closed.. keep it closed!
                     DoorState::Closed => DoorState::Closed,
@@ -155,14 +155,14 @@ fn main() {
             // Opening doors
             if input.key_pressed(KeyCode::KeyE) {
                 if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 2.0, false) {
-                    let c = g.map_m.get(cell);
+                    let c = g.map.get(cell);
                     if c.kind == 3 {
-                        match *g.map_m.doors.get(&cell).unwrap() {
+                        match *g.map.doors.get(&cell).unwrap() {
                             DoorState::Closed  => {
-                                *g.map_m.doors.get_mut(&cell).unwrap() = DoorState::Opening(0.5);
+                                *g.map.doors.get_mut(&cell).unwrap() = DoorState::Opening(0.5);
                             }
                             DoorState::Closing(a) => {
-                                *g.map_m.doors.get_mut(&cell).unwrap() = DoorState::Opening(0.5-a);
+                                *g.map.doors.get_mut(&cell).unwrap() = DoorState::Opening(0.5-a);
                             }
                             _ => {}
                         }

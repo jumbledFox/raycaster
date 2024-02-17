@@ -70,12 +70,17 @@ impl Map {
                 // Door NS
                 [127,  81,  25] => {
                     doors.insert(i, DoorState::Closed);
-                    Cell::new(3, 0b000000_00, 1)
+                    Cell::new(3, 0b0000_00_00, 1)
                 }
                 // Door WE
                 [204, 130,  40] => {
                     doors.insert(i, DoorState::Closed);
-                    Cell::new(3, 0b000000_11, 1)
+                    Cell::new(3, 0b0000_00_11, 1)
+                }
+                // Elevator door NS
+                [119, 119, 119] => {
+                    doors.insert(i, DoorState::Closed);
+                    Cell::new(3, 0b0000_01_00, 2)
                 }
                 // Thick wall NS
                 [188,  96, 188] => Cell::new(5, 0b0000000_0, 0),
