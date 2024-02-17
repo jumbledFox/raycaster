@@ -31,7 +31,7 @@ impl Game {
             player: Player::new(Vector2::new(13.0, 4.0)),
             map: Map::load(String::from("res/map3.png")),
             textures: vec![
-                Texture::from_file("res/warning.png"),
+                Texture::from_file("res/testtexture.png"),
                 Texture::from_file("res/doormetal.png"),
                 Texture::from_file("res/elevator.png"),
             ],

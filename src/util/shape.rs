@@ -204,10 +204,10 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
         }
         // SQUARE PILLAR
         6 => {
-            big_h.set_if_smaller(ray_pos_p, line_axis(true , (0.5, 0.5), local_ray_pos, ray_dir, ray_grad, 0.25, [0.25, 0.75], map_pos_f));
-            big_h.set_if_smaller(ray_pos_p, line_axis(true , (0.5, 0.5), local_ray_pos, ray_dir, ray_grad, 0.75, [0.25, 0.75], map_pos_f));
-            big_h.set_if_smaller(ray_pos_p, line_axis(false, (0.5, 0.5), local_ray_pos, ray_dir, ray_grad, 0.25, [0.25, 0.75], map_pos_f));
-            big_h.set_if_smaller(ray_pos_p, line_axis(false, (0.5, 0.5), local_ray_pos, ray_dir, ray_grad, 0.75, [0.25, 0.75], map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(true , (0.5, 0.25), local_ray_pos, ray_dir, ray_grad, 0.25, [0.25, 0.75], map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(true , (0.5, 0.25), local_ray_pos, ray_dir, ray_grad, 0.75, [0.25, 0.75], map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(false, (0.5, 0.25), local_ray_pos, ray_dir, ray_grad, 0.25, [0.25, 0.75], map_pos_f));
+            big_h.set_if_smaller(ray_pos_p, line_axis(false, (0.5, 0.25), local_ray_pos, ray_dir, ray_grad, 0.75, [0.25, 0.75], map_pos_f));
         }
         // ROUND PILLAR
         7 => {
@@ -245,6 +245,9 @@ fn line_axis(axis: bool, tex: (f64, f64), ray_pos: Point2<f64>, ray_dir: Vector2
         true  => line_y(ray_pos, ray_dir, ray_grad, intercept, line_bounds, map_pos),
     };
     if let Some(mut line) = l {
+        // if ray_dir.x.is_sign_negative() || ray_dir.y.is_sign_negative() {
+        //     line.1 = 1.0-line.1;
+        // }
         line.1 *= tex.0;
         line.1 += tex.1;
         Some(line)
@@ -320,7 +323,11 @@ fn line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, line_points:
     // I might be able to calculate 'along' faster by just checking the distance travelled on either the y or x axes,
     // however I'd have to check for edge-cases like the line having 0 change in x or 0 change in y, and I HATE edge cases!!! >:c
     // so this works :3
-    let along = distance(&point![x_intercept, y_intercept], &line_points[0]) / distance(&line_points[0], &line_points[1]);
+    let mut along = distance(&point![x_intercept, y_intercept], &line_points[0]) / distance(&line_points[0], &line_points[1]);
+    // TODO: Make textures always face the right way
+    // if ray_dir.x.is_sign_negative() || ray_dir.y.is_sign_positive() {
+    //     along = 1.0-along;
+    // }
     // TODO: work out brightness
     Some((point![map_pos.x + x_intercept, map_pos.y + y_intercept], along, 255))
 }
