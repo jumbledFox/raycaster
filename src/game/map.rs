@@ -82,6 +82,8 @@ impl Map {
                     doors.insert(i, DoorState::Closed);
                     Cell::new(3, 0b0000_01_00, 2)
                 }
+                // Thin wall Map
+                [177, 255,  61] => Cell::new(4, 0b0000000_1, 3),
                 // Thick wall NS
                 [188,  96, 188] => Cell::new(5, 0b0000000_0, 0),
                 // Thick wall EW
@@ -112,7 +114,7 @@ impl Map {
     }
 
     pub fn calculate_lightmap(&mut self) {
-        self.lightmap = vec![0; self.width*self.width];
+        self.lightmap = vec![0; self.width*self.height];
         // Find where all of the light are
         let light_positions: Vec<usize> = self.cells.iter()
             .enumerate()
