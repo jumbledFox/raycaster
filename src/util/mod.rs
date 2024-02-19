@@ -1,20 +1,18 @@
 use nalgebra::{Vector, Vector2};
+use rand::Rng;
 
 use crate::{WIDTH, game::Game};
 
 pub mod shape;
-use shape::calc_shape_hit_info;
 
-use rand::Rng;
-
-// Shoots a raycast from a position and a direction and returns what it hit (as an index in the map),
+// Shoots a ray from a position and a direction, returns what it hit (as an index in the map),
 // the hit point, how far away it was, and if it hit x or y!
 // (cell, hit_pos, distance, texture_along, side)
 
 // (cell, distance, texture_along, brightness, side)
 type RaycastResult = Option<(usize, f64, f64, u8, u8)>;
 
-pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64, tell_info: bool) -> RaycastResult {
+pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64) -> RaycastResult {
     // If the ray is out of bounds, don't bother.
     if  start_pos.x < 0.0 || start_pos.x > game.map.width  as f64 ||
         start_pos.y < 0.0 || start_pos.y > game.map.height as f64 {

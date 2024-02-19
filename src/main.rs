@@ -154,7 +154,7 @@ fn main() {
 
             // Opening doors
             if input.key_pressed(KeyCode::KeyE) {
-                if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 2.0, false) {
+                if let Some((cell, ..)) = util::raycast(&g, g.player.pos, g.player.dir, 2.0) {
                     let c = g.map.get(cell);
                     if c.kind == 3 {
                         match *g.map.doors.get(&cell).unwrap() {

@@ -38,7 +38,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
         // if w % 3 != 0 {continue;}
 
         let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
-        let raycast_result = util::raycast(game, game.player.pos, ray_direction, 500.0, w == WIDTH/2);
+        let raycast_result = util::raycast(game, game.player.pos, ray_direction, 500.0);
         if let Some((cell, distance, texture_along, brightness, side)) = raycast_result {
             // Calculating heights
             let head_height = (game.player.head_bob_amount.sin() / distance) * 10.0;
