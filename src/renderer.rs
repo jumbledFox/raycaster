@@ -16,7 +16,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
     // floor and ceiling
     let middle = (((HEIGHT/2) as f64 - game.player.pitch) as usize).min(HEIGHT as usize-1);
 
-    let light_level = game.lightmap[game.coord_to_index(&(game.player.pos.x as usize), &(game.player.pos.y as usize))];
+    let light_level = game.map.lightmap[game.coord_to_index(&(game.player.pos.x as usize), &(game.player.pos.y as usize))];
     let light_level = 15;
     let floor_col = [
         (26 / 16) * (light_level + 1),
@@ -84,7 +84,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
                 }
                 _ => 0
             };
-            let light_level = game.lightmap[cell.saturating_add_signed(offset)];
+            let light_level = game.map.lightmap[cell.saturating_add_signed(offset)];
             color[0] = (color[0] / 16) * (light_level + 1);
             color[1] = (color[1] / 16) * (light_level + 1);
             color[2] = (color[2] / 16) * (light_level + 1);

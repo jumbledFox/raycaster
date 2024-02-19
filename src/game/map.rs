@@ -106,6 +106,71 @@ impl Map {
                 _ => Cell::new(0, 0, 0),
             });
         }
-        Map {cells, width, height, doors, lightmap: vec![]}
+        let mut m = Map {cells, width, height, doors, lightmap: vec![]};
+        m.calculate_lightmap();
+        m
+    }
+
+    pub fn calculate_lightmap(&mut self) {
+        self.lightmap = vec![0; self.width*self.width];
+        // Find where all of the light are
+        let light_positions: Vec<usize> = self.cells.iter()
+            .enumerate()
+            .filter(|(_, item)| item.kind == 2)
+            .map(|(index, _)| index)
+            .collect();
+        
+        // For each light...
+        for lp in light_positions {
+            let mut light_level = 16;
+            
+            // Which cells this light has checked
+            let mut done: Vec<usize> = vec![];
+            // Positions we're currently checking
+            let mut fronteir: Vec<usize> = vec![lp];
+            // Holds all of the neighbours we're gonna do next.
+            let mut neighbours : Vec<usize> = vec![];
+
+            while light_level > 0 {
+                for &index in &fronteir {
+                    // Make sure we only do each cell once per light
+                    if done.contains(&index) {
+                        continue;
+                    }
+                    done.push(index);
+
+                    // Set the light level of the cell (if it's higher than the old one)
+                    if self.lightmap[index] < light_level {
+                        self.lightmap[index] = light_level;
+                    }
+
+                    // Check and add all neighbours of this cell
+                    let neighbour_offsets = [index.checked_add(1), index.checked_sub(1), index.checked_add(self.width), index.checked_sub(self.width)];
+                    for (i, neighbour_index) in neighbour_offsets.iter().enumerate() {
+                        // Skip if the neighbour isn't valid
+                        if neighbour_index.is_none() { continue; }
+                        // Make sure we don't go off an edge
+                        if match i {
+                            /* Right */ 0 => { index % self.width == self.width-1 }
+                            /* Left  */ 1 => { index % self.width == 0 }
+                            /* Down  */ 2 => { index / self.width == self.height-1 }
+                            /* Up    */ _ => { index / self.width == 0 }
+                        } { continue; }
+                        // Skip if the neighbour is solid
+                        if self.cells.get(neighbour_index.unwrap()).unwrap().kind == 1 { continue; }
+                        neighbours.push(neighbour_index.unwrap());
+                    } 
+                }
+                // Remove all duplicate neighbours
+                neighbours.sort_unstable();
+                neighbours.dedup();
+                // Make it so the new frontier is made up of the neighbours we just found
+                fronteir = std::mem::replace(&mut neighbours, fronteir);
+                // Clear the neighbours for next run
+                neighbours.clear();
+
+                light_level -= 1;
+            }
+        }
     }
 }
