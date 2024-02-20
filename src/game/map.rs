@@ -47,6 +47,13 @@ pub struct Map {
 }
 
 impl Map {
+    pub fn coord_to_index(&self, x: &usize, y: &usize) -> usize {
+        y * self.width + x
+    }
+    pub fn index_to_coord(&self, index: usize) -> (usize, usize) {
+        (index % self.width, index / self.width)
+    }
+
     pub fn get(&self, index: usize) -> &Cell {
         return &self.cells[index];
     }

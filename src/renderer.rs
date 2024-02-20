@@ -16,7 +16,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
     // floor and ceiling
     let middle = (((HEIGHT/2) as f64 - game.player.pitch) as usize).min(HEIGHT as usize-1);
 
-    let light_level = game.map.lightmap[game.coord_to_index(&(game.player.pos.x as usize), &(game.player.pos.y as usize))];
+    let light_level = game.map.lightmap[game.map.coord_to_index(&(game.player.pos.x as usize), &(game.player.pos.y as usize))];
     let light_level = 15;
     let floor_col = [
         (26 / 16) * (light_level + 1),

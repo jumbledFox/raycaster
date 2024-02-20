@@ -1,6 +1,10 @@
 use std::{ops::Mul, f64::consts::PI};
 
-use nalgebra::{Vector2, SimdPartialOrd};
+use nalgebra::{vector, SimdPartialOrd, Vector2};
+
+use crate::Game;
+
+use super::map::Map;
 
 pub struct Player {
     pub pos: Vector2<f64>,
@@ -24,7 +28,7 @@ impl Player {
             lineposa: Vector2::zeros(), lineposb: Vector2::zeros(), }
     }
 
-    pub fn step(&mut self, dir: Vector2<f64>, delta: f64) {
+    pub fn step(&mut self, map: &Map, dir: Vector2<f64>, delta: f64) {
         // TODO: better movement
         let dir = dir * 0.6;
         self.vel *= 1.0-(delta * 10.0).min(1.0);
@@ -37,7 +41,20 @@ impl Player {
         self.head_bob_amount += self.vel.magnitude().min(1.0) * delta * 30.0;
         self.head_bob_amount = self.head_bob_amount.rem_euclid(PI * 2.0);
         //self.head_bob_amount += (delta * 10.0).rem_euclid(PI*2.0);
-        self.pos.x += self.vel.x * 10.0 * delta;
-        self.pos.y += self.vel.y * 10.0 * delta;
+
+        // Very primitive collision detection
+        let newpos = na::vector![self.pos.x + self.vel.x * 10.0 * delta, self.pos.y + self.vel.y * 10.0 * delta];
+
+        if map.get(map.coord_to_index(&(newpos.x.floor() as usize), &(self.pos.y.floor() as usize))).kind == 1 {
+        } else {
+            self.pos.x = newpos.x;
+        }
+        if map.get(map.coord_to_index(&(self.pos.x.floor() as usize), &(newpos.y.floor() as usize))).kind == 1 {
+        } else {
+            self.pos.y = newpos.y;
+        }
+
+        // self.pos.x += self.vel.x * 10.0 * delta;
+        // self.pos.y += self.vel.y * 10.0 * delta;
     }
 }

@@ -18,13 +18,6 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn coord_to_index(&self, x: &usize, y: &usize) -> usize {
-        y * self.map.width + x
-    }
-    pub fn index_to_coord(&self, index: usize) -> (usize, usize) {
-        (index % self.map.width, index / self.map.width)
-    }
-
     pub fn new() -> Game {
         Game {
             // TODO: Make player position load from map

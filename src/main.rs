@@ -183,7 +183,7 @@ fn main() {
             if mov.magnitude() != 0.0 { mov = mov.normalize(); }
             if input.key_held(KeyCode::ControlLeft) { mov *= 0.5; }
 
-            g.player.step(mov * 8.0, deltatime);
+            g.player.step(&g.map, mov * 8.0, deltatime);
 
             // Only rotate if the mouse is locked
             if cursor_mode == CursorMode::Locked {

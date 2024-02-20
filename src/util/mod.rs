@@ -63,7 +63,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
         if distance > max_dist { break; }
 
         // Get the tile at the current position, check it out
-        let tile_index = game.coord_to_index(&map_pos.x, &map_pos.y);
+        let tile_index = game.map.coord_to_index(&map_pos.x, &map_pos.y);
         let t = game.map.get(tile_index);
         match t.kind {
             // Air | Light, obviously don't want to render this
