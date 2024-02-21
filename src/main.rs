@@ -55,7 +55,7 @@ fn main() {
     let mut lasttime = Instant::now();
 
     let mut g = Game::new();
-    let mut render_map = false;
+    let mut render_map = true;
 
     event_loop.run(move |event, control_flow| {
         if let Event::WindowEvent { event, .. } = &event {
@@ -63,7 +63,7 @@ fn main() {
                 WindowEvent::RedrawRequested => {
                     renderer::render_view(pixels.frame_mut(), &mut g, 2.0);
                     if render_map {
-                        renderer::render_map(pixels.frame_mut(), &mut g, 5);
+                        renderer::render_map(pixels.frame_mut(), &mut g, 15);
                     }
 
                     if let Err(err) = pixels.render() {

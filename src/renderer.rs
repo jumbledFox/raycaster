@@ -3,7 +3,7 @@ use std::{f64::consts::PI, ops::Add};
 use crate::{WIDTH, HEIGHT, WIDTH_USIZE, HEIGHT_USIZE, na, Vector2, util, game::{Game, player}, ASPECT_RATIO};
 
 use lerp::num_traits::CheckedShr;
-use na::coordinates::X;
+use na::{coordinates::X, vector};
 use pixels_primitives;
 use rand::{thread_rng, Rng};
 
@@ -146,13 +146,13 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
         draw_line(screen,
         Vector2::new((i*cell_size) as f64, 0.0) + render_offset,
         Vector2::new((i*cell_size) as f64, (game.map.height * cell_size) as f64) + render_offset,
-        &[0xAA, 0xAA, 0xAA, 0xFF]);
+        &[0x55, 0x55, 0x55, 0xFF]);
     }
     for i in 0..game.map.height {
         draw_line(screen,
         Vector2::new(0.0, (i*cell_size) as f64) + render_offset,
         Vector2::new((game.map.width * cell_size) as f64, (i*cell_size) as f64) + render_offset,
-        &[0xAA, 0xAA, 0xAA, 0xFF]);
+        &[0x55, 0x55, 0x55, 0xFF]);
     }
 
     // for (i, &cell) in game.map.cells.clo.enumerate() {
@@ -166,23 +166,25 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
     pixels_primitives::circle_filled(screen, WIDTH as i32,
         game.player.pos.x.clamp(0.0, game.map.width  as f64) * cell_size as f64 + render_offset.x,
         game.player.pos.y.clamp(0.0, game.map.height as f64) * cell_size as f64 + render_offset.y,
-        cell_size as f64 / 2.0, &[0x00, 0xFF, 0x00, 0xFF]);
+        crate::game::player::PLAYER_RADIUS * cell_size as f64, &[0x00, 0xFF, 0x00, 0xFF]);
     draw_line(screen,
          game.player.pos * cell_size as f64 + render_offset,
         (game.player.pos + game.player.dir * game.player.mid_ray_dist) * cell_size as f64 + render_offset,
         &[0xDD, 0xDD, 0xDD, 0xFF]);
-    draw_line(screen,
-        game.player.lineposa * cell_size as f64 + render_offset,
-        game.player.lineposb * cell_size as f64 + render_offset,
-        &[0xFF, 0x00, 0xFF, 0xFF]);
-    pixels_primitives::circle_filled(screen, WIDTH as i32,
-        game.player.lineposa.x.clamp(0.0, game.map.width  as f64) * cell_size as f64 + render_offset.x,
-        game.player.lineposa.y.clamp(0.0, game.map.height as f64) * cell_size as f64 + render_offset.y,
-        cell_size as f64 / 3.0, &[0xFF, 0x00, 0x00, 0xFF]);
-    pixels_primitives::circle_filled(screen, WIDTH as i32,
-        game.player.lineposb.x.clamp(0.0, game.map.width  as f64) * cell_size as f64 + render_offset.x,
-        game.player.lineposb.y.clamp(0.0, game.map.height as f64) * cell_size as f64 + render_offset.y,
-        cell_size as f64 / 3.0, &[0x00, 0x00, 0xFF, 0xFF]);
+
+    for seg in &game.player.segs {
+        draw_line(screen,
+            vector![seg[0].x, seg[0].y] * cell_size as f64 + render_offset,
+            vector![seg[1].x, seg[1].y] * cell_size as f64 + render_offset,
+            &[0xAA, 0xAA, 0xAA, 0xFF]);
+        for p in seg {
+            pixels_primitives::circle_filled(screen, WIDTH as i32,
+                p.x * cell_size as f64 + render_offset.x,
+                p.y * cell_size as f64 + render_offset.y,
+                cell_size as f64 / 6.0, &[0xFF, 0xFF, 0xFF, 0xFF]);
+        }
+
+    }
 }
 
 // A neater way of invoking pixels_primitves functions

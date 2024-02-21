@@ -1,10 +1,11 @@
 use std::{ops::Mul, f64::consts::PI};
 
-use nalgebra::{vector, SimdPartialOrd, Vector2};
+use nalgebra::{point, vector, Point2, SimdPartialOrd, Vector2};
 
-use crate::Game;
-
+use crate::{Game, game::collision};
 use super::map::Map;
+
+pub const PLAYER_RADIUS: f64 = 0.3; 
 
 pub struct Player {
     pub pos: Vector2<f64>,
@@ -14,10 +15,9 @@ pub struct Player {
     pub head_bob_amount: f64,
     pub cam_plane: Vector2<f64>,
 
-    pub lineposa: Vector2<f64>,
-    pub lineposb: Vector2<f64>,
-
     pub mid_ray_dist: f64,
+
+    pub segs: Vec<collision::Segment>,
 }
 
 impl Player {
@@ -25,7 +25,32 @@ impl Player {
         Player {
             pos, dir: Vector2::new(1.0, 0.0), pitch: 0.0,
             vel: Vector2::zeros(), cam_plane: Vector2::new(-1.0, 0.0), head_bob_amount: 0.0, mid_ray_dist: 0.0,
-            lineposa: Vector2::zeros(), lineposb: Vector2::zeros(), }
+            segs: collision::gen_segs(vec![
+                ((5.0, 3.0), (5.0, 2.0)), 
+                ((5.0, 2.0), (5.0, 1.0)), 
+                ((5.0, 1.0), (4.0, 1.0)), 
+                ((4.0, 1.0), (3.0, 1.0)), 
+                ((3.0, 1.0), (2.0, 1.0)),
+
+                ((2.0, 1.0), (1.0, 2.0)), 
+                ((1.0, 2.0), (1.0, 3.0)), 
+                ((1.0, 3.0), (1.0, 4.0)), 
+                ((1.0, 4.0), (2.0, 5.0)), 
+                ((2.0, 5.0), (3.0, 6.0)), 
+                ((3.0, 6.0), (4.0, 6.0)),
+                ((4.0, 6.0), (4.0, 7.0)),
+
+                ((5.0, 7.0), (5.0, 6.0)),
+                ((5.0, 6.0), (6.0, 6.0)),
+
+                ((2.0, 2.0), (2.0, 2.0)),
+
+                ((3.25, 2.25), (3.25, 2.75)),
+                ((3.75, 2.25), (3.75, 2.75)),
+                ((3.25, 2.25), (3.75, 2.25)),
+                ((3.25, 2.75), (3.75, 2.75)),
+            ]),
+        }
     }
 
     pub fn step(&mut self, map: &Map, dir: Vector2<f64>, delta: f64) {
@@ -43,16 +68,19 @@ impl Player {
         //self.head_bob_amount += (delta * 10.0).rem_euclid(PI*2.0);
 
         // Very primitive collision detection
-        let newpos = na::vector![self.pos.x + self.vel.x * 10.0 * delta, self.pos.y + self.vel.y * 10.0 * delta];
+        let mov_delta = na::point![self.vel.x * 10.0 * delta, self.vel.y * 10.0 * delta];
 
-        if map.get(map.coord_to_index(&(newpos.x.floor() as usize), &(self.pos.y.floor() as usize))).kind == 1 {
-        } else {
-            self.pos.x = newpos.x;
-        }
-        if map.get(map.coord_to_index(&(self.pos.x.floor() as usize), &(newpos.y.floor() as usize))).kind == 1 {
-        } else {
-            self.pos.y = newpos.y;
-        }
+        let mut p = point![self.pos.x, self.pos.y];
+        collision::slide_mov(&mut p, mov_delta, &self.segs);
+        self.pos = vector![p.x, p.y];
+        // if map.get(map.coord_to_index(&(newpos.x.floor() as usize), &(self.pos.y.floor() as usize))).kind == 1 {
+        // } else {
+        //     self.pos.x = newpos.x;
+        // }
+        // if map.get(map.coord_to_index(&(self.pos.x.floor() as usize), &(newpos.y.floor() as usize))).kind == 1 {
+        // } else {
+        //     self.pos.y = newpos.y;
+        // }
 
         // self.pos.x += self.vel.x * 10.0 * delta;
         // self.pos.y += self.vel.y * 10.0 * delta;
