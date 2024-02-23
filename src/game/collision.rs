@@ -5,20 +5,20 @@ use crate::game::collision;
 
 use super::player::PLAYER_RADIUS;
 
-pub type Segment = [Point2<f64>; 2];
+pub type Segment = [Point2<f32>; 2];
 
 // http://code.alaiwan.org/blog/collision-disk.html
 
 pub struct Collision {
-    pub depth: f64,
-    pub normal: Point2<f64>,
+    pub depth: f32,
+    pub normal: Point2<f32>,
 }
 
-pub fn slide_mov(pos: &mut Point2<f64>, delta: Point2<f64>, segments: &Vec<Segment>) {
+pub fn slide_mov(pos: &mut Point2<f32>, delta: Point2<f32>, segments: &Vec<Segment>) {
     pos.x += delta.x;
     pos.y += delta.y;
 
-    for i in 0..7 {
+    for _ in 0..7 {
         if let Some(collision) = collide_with_segments(*pos, segments) {
             if collision.depth == 0.0 { break; }
             pos.x += collision.normal.x * collision.depth;
@@ -29,7 +29,7 @@ pub fn slide_mov(pos: &mut Point2<f64>, delta: Point2<f64>, segments: &Vec<Segme
     }
 }
 
-pub fn collide_with_segments(pos: Point2<f64>, segments: &Vec<Segment>) -> Option<Collision> {
+pub fn collide_with_segments(pos: Point2<f32>, segments: &Vec<Segment>) -> Option<Collision> {
     let mut deepest: Option<Collision> = None;
     for seg in segments {
         if let Some(collision) = collide_disk_with_segment(pos, *seg) {
@@ -49,7 +49,7 @@ pub fn collide_with_segments(pos: Point2<f64>, segments: &Vec<Segment>) -> Optio
    deepest
 }
 
-pub fn collide_disk_with_segment(disk_center: Point2<f64>, seg: Segment) -> Option<Collision> {
+pub fn collide_disk_with_segment(disk_center: Point2<f32>, seg: Segment) -> Option<Collision> {
     let delta = disk_center - closest_point_on_seg(disk_center, seg);
 
     if point_2_cmp_mul(delta.into(), delta.into()) > PLAYER_RADIUS * PLAYER_RADIUS { return None; }
@@ -60,7 +60,7 @@ pub fn collide_disk_with_segment(disk_center: Point2<f64>, seg: Segment) -> Opti
 }
 
 // Returns the point from 'seg' which is closest to 'p'
-pub fn closest_point_on_seg(p: Point2<f64>, seg: Segment) -> Point2<f64> {
+pub fn closest_point_on_seg(p: Point2<f32>, seg: Segment) -> Point2<f32> {
     let tangent = seg[1] - seg[0];
     
     if (p - seg[0]).dot(&tangent) <= 0.0 {
@@ -75,6 +75,6 @@ pub fn closest_point_on_seg(p: Point2<f64>, seg: Segment) -> Point2<f64> {
     return seg[0] + t * point_2_cmp_mul(t.into(), relative_pos.into());
 }
 
-pub fn point_2_cmp_mul(a: Point2<f64>, b: Point2<f64>) -> f64 {
+pub fn point_2_cmp_mul(a: Point2<f32>, b: Point2<f32>) -> f32 {
     a.x * b.x + a.y * b.y
 }

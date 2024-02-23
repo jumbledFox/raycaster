@@ -23,7 +23,7 @@ const HEIGHT: u32 = WIDTH/2;//324;
 const WIDTH_USIZE: usize = WIDTH as usize;
 const HEIGHT_USIZE: usize = HEIGHT as usize;
 
-const ASPECT_RATIO: f64 = WIDTH as f64 / HEIGHT as f64;
+const ASPECT_RATIO: f32 = WIDTH as f32 / HEIGHT as f32;
 
 #[derive(Debug, PartialEq)]
 enum CursorMode {Free, Locked}
@@ -33,8 +33,8 @@ fn main() {
     let mut input = WinitInputHelper::new();
 
     let window = {
-        let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
-        let scaled_size = LogicalSize::new(WIDTH as f64 * 2.0, HEIGHT as f64 * 2.0);
+        let size = LogicalSize::new(WIDTH as f32, HEIGHT as f32);
+        let scaled_size = LogicalSize::new(WIDTH as f32 * 2.0, HEIGHT as f32 * 2.0);
         WindowBuilder::new()
             .with_title("Raycasting :3")
             // .with_title("Raycasting")
@@ -51,7 +51,7 @@ fn main() {
         Pixels::new(WIDTH, HEIGHT, surface_texture).unwrap()
     };
 
-    let mut deltatime: f64 = 0.0;
+    let mut deltatime: f32 = 0.0;
     let mut lasttime = Instant::now();
 
     let mut g = Game::new();
@@ -74,7 +74,7 @@ fn main() {
             }
         }
         if input.update(&event) {
-            deltatime = lasttime.elapsed().as_secs_f64();
+            deltatime = lasttime.elapsed().as_secs_f32();
             lasttime = Instant::now();
 
             // Exiting
@@ -187,10 +187,10 @@ fn main() {
 
             // Only rotate if the mouse is locked
             if cursor_mode == CursorMode::Locked {
-                let mut r: f64 = 0.0;
+                let mut r: f32 = 0.0;
                 if input.key_held(KeyCode::ArrowLeft)  { r -= 3.0; }
                 if input.key_held(KeyCode::ArrowRight) { r += 3.0; }
-                r += input.mouse_diff().0 as f64 / 10.0;
+                r += input.mouse_diff().0 as f32 / 10.0;
                 // window.set_cursor_position(LogicalPosition::new(WIDTH, HEIGHT));
                 r *= 0.035;
                 g.player.dir = (na::Rotation2::new(r) * g.player.dir).normalize();
@@ -198,7 +198,7 @@ fn main() {
                 if input.key_held(KeyCode::ArrowDown) { g.player.pitch += 5.0; }
                 // println!("{:?}", g.player.pitch);
 
-                g.player.pitch = (g.player.pitch + input.mouse_diff().1 as f64 / 2.0).clamp(-121.0, 121.0);
+                g.player.pitch = (g.player.pitch + input.mouse_diff().1 as f32 / 2.0).clamp(-121.0, 121.0);
             }
 
             // Redraw

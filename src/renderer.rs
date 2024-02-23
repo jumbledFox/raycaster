@@ -5,13 +5,13 @@ use pixels_primitives;
 // use rand::{thread_rng, Rng};
 
 // const GRID_SIZE: u32 = 12;
-// const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this 
+// const GRID_SIZE_f32: f32 = GRID_SIZE as f32; // TODO: find out if i need this 
 
-pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
+pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f32) {
     game.player.cam_plane = Vector2::new(-game.player.dir.y, game.player.dir.x) * fov;
 
     // floor and ceiling
-    let middle = (((HEIGHT/2) as f64 - game.player.pitch) as usize).min(HEIGHT as usize-1);
+    let middle = (((HEIGHT/2) as f32 - game.player.pitch) as usize).min(HEIGHT as usize-1);
 
     // let light_level = game.map.lightmap[game.map.coord_to_index(&(game.player.pos.x as usize), &(game.player.pos.y as usize))];
     let light_level = 15;
@@ -34,13 +34,13 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
     for w in 0..WIDTH {
         // if w % 3 != 0 {continue;}
 
-        let ray_direction = game.player.dir + (game.player.cam_plane * (w as f64 / WIDTH as f64 * 2.0 - 1.0));
+        let ray_direction = game.player.dir + (game.player.cam_plane * (w as f32 / WIDTH as f32 * 2.0 - 1.0));
         let raycast_result = util::raycast(game, game.player.pos, ray_direction, 500.0);
         if let Some((cell, distance, texture_along, brightness, side)) = raycast_result {
             // Calculating heights
             let head_height = (game.player.head_bob_amount.sin() / distance) * 10.0;
 
-            // let h = HEIGHT as f64;
+            // let h = HEIGHT as f32;
             // let lineheight = (h / distance);// * (1.0/ASPECT_RATIO);
             // let mut draw_start = -lineheight / 2.0 + h / 2.0 + head_height - game.player.pitch;
             // if draw_start < 0.0 { draw_start = 0.0 };
@@ -49,7 +49,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
             // TODO: Make this better
             let h = HEIGHT as isize;
-            let lineheight = (h as f64 / (distance*fov)) as isize;// * (1.0/ASPECT_RATIO);
+            let lineheight = (h as f32 / (distance*fov)) as isize;// * (1.0/ASPECT_RATIO);
             let line_start = -lineheight / 2 + h / 2 + (head_height - game.player.pitch) as isize;
             // if draw_start < 0 { draw_start = 0 };
             let line_end   =  lineheight / 2 + h / 2 + (head_height - game.player.pitch) as isize;
@@ -86,7 +86,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
             color[1] = (color[1] / 16) * (light_level + 1);
             color[2] = (color[2] / 16) * (light_level + 1);
 
-            // draw_line(screen, Vector2::new(w as f64, draw_start), Vector2::new(w as f64, draw_end), &color);
+            // draw_line(screen, Vector2::new(w as f32, draw_start), Vector2::new(w as f32, draw_end), &color);
             draw_slice(screen, game, w as usize, texture_along, line_start, line_end, &color, game.map.cells[cell].texture_index.into());
 
             if w == WIDTH / 2 { game.player.mid_ray_dist = distance }
@@ -98,14 +98,14 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
 
 // TODO:
 // Draws a slice of a raycast
-fn draw_slice(screen: &mut [u8], game: &Game, screen_column: usize, along: f64, line_start: isize, line_end: isize, col: &[u8; 4], texture_index: usize) {
+fn draw_slice(screen: &mut [u8], game: &Game, screen_column: usize, along: f32, line_start: isize, line_end: isize, col: &[u8; 4], texture_index: usize) {
     // TODO: better way to do this
     let draw_start = line_start.clamp(0, HEIGHT as isize) as usize;
     let draw_end   = line_end  .clamp(0, HEIGHT as isize) as usize;
 
     let tex = &game.textures[texture_index];
 
-    let column: usize = (along.rem_euclid(1.0) * (tex.width) as f64).floor() as usize; // TODO: Don't use 'as' here
+    let column: usize = (along.rem_euclid(1.0) * (tex.width) as f32).floor() as usize; // TODO: Don't use 'as' here
 
     let slice_begin = ( column    * tex.height) * 3;
     let slice_end   = ((column+1) * tex.height) * 3;
@@ -133,22 +133,24 @@ fn draw_slice(screen: &mut [u8], game: &Game, screen_column: usize, along: f64, 
 }
 
 // Draws the map on to the screen
+
+// The map drawing code is a little messy right now because pixels_primitives isn't very good
 pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
     let render_offset_w = WIDTH_USIZE  / 2 - (game.map.width  * cell_size) / 2;
     let render_offset_h = HEIGHT_USIZE / 2 - (game.map.height * cell_size) / 2;
-    let render_offset = Vector2::new(render_offset_w as f64, render_offset_h as f64);
-    // let map_size = Vector2::new((game.map.width * cell_size) as f64, (game.map.height * cell_size) as f64);
+    let render_offset = Vector2::new(render_offset_w as f32, render_offset_h as f32);
+    // let map_size = Vector2::new((game.map.width * cell_size) as f32, (game.map.height * cell_size) as f32);
 
     for i in 0..game.map.width {
         draw_line(screen,
-        Vector2::new((i*cell_size) as f64, 0.0) + render_offset,
-        Vector2::new((i*cell_size) as f64, (game.map.height * cell_size) as f64) + render_offset,
+        Vector2::new((i*cell_size) as f32, 0.0) + render_offset,
+        Vector2::new((i*cell_size) as f32, (game.map.height * cell_size) as f32) + render_offset,
         &[0x55, 0x55, 0x55, 0xFF]);
     }
     for i in 0..game.map.height {
         draw_line(screen,
-        Vector2::new(0.0, (i*cell_size) as f64) + render_offset,
-        Vector2::new((game.map.width * cell_size) as f64, (i*cell_size) as f64) + render_offset,
+        Vector2::new(0.0, (i*cell_size) as f32) + render_offset,
+        Vector2::new((game.map.width * cell_size) as f32, (i*cell_size) as f32) + render_offset,
         &[0x55, 0x55, 0x55, 0xFF]);
     }
 
@@ -161,23 +163,23 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
     
 
     pixels_primitives::circle_filled(screen, WIDTH as i32,
-        game.player.pos.x.clamp(0.0, game.map.width  as f64) * cell_size as f64 + render_offset.x,
-        game.player.pos.y.clamp(0.0, game.map.height as f64) * cell_size as f64 + render_offset.y,
-        crate::game::player::PLAYER_RADIUS * cell_size as f64, &[0x00, 0xFF, 0x00, 0xFF]);
+        (game.player.pos.x as f64).clamp(0.0, game.map.width  as f64) * cell_size as f64 + render_offset.x as f64,
+        (game.player.pos.y as f64).clamp(0.0, game.map.height as f64) * cell_size as f64 + render_offset.y as f64,
+        crate::game::player::PLAYER_RADIUS as f64 * cell_size as f64, &[0x00, 0xFF, 0x00, 0xFF]);
     draw_line(screen,
-         game.player.pos * cell_size as f64 + render_offset,
-        (game.player.pos + game.player.dir * game.player.mid_ray_dist) * cell_size as f64 + render_offset,
+         game.player.pos * cell_size as f32 + render_offset,
+        (game.player.pos + game.player.dir * game.player.mid_ray_dist) * cell_size as f32 + render_offset,
         &[0xDD, 0xDD, 0xDD, 0xFF]);
 
     for seg in &game.map.collision {
         draw_line(screen,
-            vector![seg[0].x, seg[0].y] * cell_size as f64 + render_offset,
-            vector![seg[1].x, seg[1].y] * cell_size as f64 + render_offset,
+            vector![seg[0].x, seg[0].y] * cell_size as f32 + render_offset,
+            vector![seg[1].x, seg[1].y] * cell_size as f32 + render_offset,
             &[0xAA, 0xAA, 0xAA, 0xFF]);
         for p in seg {
             pixels_primitives::circle_filled(screen, WIDTH as i32,
-                p.x * cell_size as f64 + render_offset.x,
-                p.y * cell_size as f64 + render_offset.y,
+                p.x as f64 * cell_size as f64 + render_offset.x as f64,
+                p.y as f64 * cell_size as f64 + render_offset.y as f64,
                 cell_size as f64 / 6.0, &[0xFF, 0xFF, 0xFF, 0xFF]);
         }
 
@@ -185,8 +187,8 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
 }
 
 // A neater way of invoking pixels_primitves functions
-fn draw_line(screen: &mut [u8], pos_a: Vector2<f64>, pos_b: Vector2<f64>, col: &[u8; 4]) {
-    pixels_primitives::line(screen, WIDTH as i32, pos_a.x, pos_a.y, pos_b.x, pos_b.y, col);
+fn draw_line(screen: &mut [u8], pos_a: Vector2<f32>, pos_b: Vector2<f32>, col: &[u8; 4]) {
+    pixels_primitives::line(screen, WIDTH as i32, pos_a.x as f64, pos_a.y as f64, pos_b.x as f64, pos_b.y as f64, col);
 }
 
 // My own draw_rect function, doesn't do bounds checking but like,, just don't be stupid?? 

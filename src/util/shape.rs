@@ -5,31 +5,36 @@ use rand::{thread_rng, Rng};
 
 use crate::game::{map::{Cell, DoorState}, Game};
 
-type HitPoint = (Point2<f64>, f64, u8);
+type HitPoint = (Point2<f32>, f32, u8);
 
-pub type Segment = [Point2<f64>; 2];
+pub type Segment = [Point2<f32>; 2];
 
 // What i want to do:
 // store all shapes in some easy form, like a vector of segments
+
 // I don't want to regenerate them each time so I've got to hard-code the segments and generate their equations
 // Shapes are made up of lines (and maybe in the future curves, i could have an enum that has varients like line, x_line, y_line
 // (for a line, a line on the x axis, a line on the y axis, etc) then i could have a function that takes in the enum and does stuff
 
+// so a shape is defined as segments, then some code runs through each of them and generates line equations
+// how tf is this gonna work with doors?
 pub enum ShapePart {
-    Line(f64, f64, f64, f64),
-    LineX(f64, f64, f64),
-    LineY(f64, f64, f64),
+    Line(bool, f32, f32, f32, f32), // normalise texture?, x1, y1, x2, y2
+    LineX(bool, f32, f32, f32), // line so that y = (1), between 2 and 3
+    LineY(bool, f32, f32, f32), // line so that x = (1), between 2 and 3
+
 }
+
 pub fn get_shape_segments(_cell: &Cell) {
     
 }
 
 trait SetIfSmaller {
-    fn set_if_smaller(&mut self, pos: Point2<f64>, other: Option<HitPoint>);
+    fn set_if_smaller(&mut self, pos: Point2<f32>, other: Option<HitPoint>);
 }
 
 impl SetIfSmaller for Option<HitPoint> {
-    fn set_if_smaller(&mut self, pos: Point2<f64>, other: Option<HitPoint>) {
+    fn set_if_smaller(&mut self, pos: Point2<f32>, other: Option<HitPoint>) {
         if other.is_none() { return; }
         if self.is_none() {
             *self = other;
@@ -43,8 +48,8 @@ impl SetIfSmaller for Option<HitPoint> {
     }
 }
 
-pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<usize>, ray_pos: Vector2<f64>, ray_dir: Vector2<f64>) -> Option<(f64, f64, u8)>{
-    let map_pos_f = point![map_pos.x as f64, map_pos.y as f64];
+pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<usize>, ray_pos: Vector2<f32>, ray_dir: Vector2<f32>) -> Option<(f32, f32, u8)>{
+    let map_pos_f = point![map_pos.x as f32, map_pos.y as f32];
     // STILL need to make everything use points instead of Vector2.. so this will do for now
     let local_ray_pos = point![ray_pos.x - map_pos_f.x, ray_pos.y - map_pos_f.y];
     // Precalculated as it's probably a teeny bit faster that way
@@ -140,14 +145,14 @@ pub fn shape_hit(game: &Game, cell: &Cell, tile_index: usize, map_pos: Vector2<u
 
 }
 
-fn quad(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, intercept: f64, rect_start: Point2<f64>) {
+fn quad(ray_pos: Point2<f32>, ray_dir: Vector2<f32>, ray_grad: f32, intercept: f32, rect_start: Point2<f32>) {
 
 }
 
 // A line on an axis 
 // If `axis`` is false the line is on the X axis, otherwise it's on the Y
 // tex.0 is the texture stretch, tex.1 is the texture offset.
-fn line_axis(axis: bool, tex: (f64, f64), ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>)
+fn line_axis(axis: bool, tex: (f32, f32), ray_pos: Point2<f32>, ray_dir: Vector2<f32>, ray_grad: f32, intercept: f32, line_bounds: [f32; 2], map_pos: Point2<f32>)
     -> Option<HitPoint> {
     
     let l = match axis {
@@ -166,7 +171,7 @@ fn line_axis(axis: bool, tex: (f64, f64), ray_pos: Point2<f64>, ray_dir: Vector2
 }
 
 // A line on the X axis.
-fn line_x(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, y_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
+fn line_x(ray_pos: Point2<f32>, ray_dir: Vector2<f32>, ray_grad: f32, y_intercept: f32, line_bounds: [f32; 2], map_pos: Point2<f32>) -> Option<HitPoint> {
     // If the y intercept lies outside the the cell, we don't want it!!
     if !between_in_cell(y_intercept, 0.0, 1.0) { return None; }
     
@@ -179,12 +184,12 @@ fn line_x(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, y_intercep
     // If the position we found is behind the ray.. we don't want it!!!!!!
     if point_behind_ray(ray_pos, ray_dir, x_intercept, y_intercept) { return None; }
 
-    let along = (x_intercept - f64::min(line_bounds[0], line_bounds[1])) / f64::abs(line_bounds[1] - line_bounds[0]);
+    let along = (x_intercept - f32::min(line_bounds[0], line_bounds[1])) / f32::abs(line_bounds[1] - line_bounds[0]);
     Some((point![map_pos.x + x_intercept, map_pos.y + y_intercept], along, 255))
 }
 
 // A line on the Y axis.
-fn line_y(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, x_intercept: f64, line_bounds: [f64; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
+fn line_y(ray_pos: Point2<f32>, ray_dir: Vector2<f32>, ray_grad: f32, x_intercept: f32, line_bounds: [f32; 2], map_pos: Point2<f32>) -> Option<HitPoint> {
     // If the x intercept lies outside the the cell, we don't want it!!
     if !between_in_cell(x_intercept, 0.0, 1.0) { return None; }
     
@@ -197,13 +202,13 @@ fn line_y(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, x_intercep
     // If the position we found is behind the ray.. we don't want it!!!!!!
     if point_behind_ray(ray_pos, ray_dir, x_intercept, y_intercept) { return None; }
 
-    let along = (y_intercept - f64::min(line_bounds[0], line_bounds[1])) / f64::abs(line_bounds[1] - line_bounds[0]);
+    let along = (y_intercept - f32::min(line_bounds[0], line_bounds[1])) / f32::abs(line_bounds[1] - line_bounds[0]);
     Some((point![map_pos.x + x_intercept, map_pos.y + y_intercept], along, 192))
 }
 
 // Returns if/where the ray hit a given line. (as well as how far along :3)
 // from 0 - 1 inside a cell.
-fn line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, line_points: [Point2<f64>; 2], map_pos: Point2<f64>) -> Option<HitPoint> {
+fn line(ray_pos: Point2<f32>, ray_dir: Vector2<f32>, ray_grad: f32, line_points: [Point2<f32>; 2], map_pos: Point2<f32>) -> Option<HitPoint> {
     // If the line is straight along the x axis or y axis, check it the quick (and less error-prone) way.
     if line_points[0].x == line_points[1].x {
         return line_y(ray_pos, ray_dir, ray_grad, line_points[0].x, [line_points[0].y, line_points[1].y], map_pos);
@@ -244,13 +249,13 @@ fn line(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, ray_grad: f64, line_points:
 }
 
 // Checks if the input is between two values, as well as making sure it's between 0.0 and 1.0
-fn between_in_cell(input: f64, p1: f64, p2: f64) -> bool {
-    input >= f64::min(p1, p2).clamp(0.0, 1.0) &&
-    input <= f64::max(p1, p2).clamp(0.0, 1.0)
+fn between_in_cell(input: f32, p1: f32, p2: f32) -> bool {
+    input >= f32::min(p1, p2).clamp(0.0, 1.0) &&
+    input <= f32::max(p1, p2).clamp(0.0, 1.0)
 }
 
 // Returns true if the point is behind the ray.
-fn point_behind_ray(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, x_intercept: f64, y_intercept: f64) -> bool {
+fn point_behind_ray(ray_pos: Point2<f32>, ray_dir: Vector2<f32>, x_intercept: f32, y_intercept: f32) -> bool {
     ((ray_dir.x.is_sign_positive() && x_intercept < ray_pos.x) || (ray_dir.x.is_sign_negative() && x_intercept > ray_pos.x)) && 
     ((ray_dir.y.is_sign_positive() && y_intercept < ray_pos.y) || (ray_dir.y.is_sign_negative() && y_intercept > ray_pos.y))
 }

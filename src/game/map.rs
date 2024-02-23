@@ -23,9 +23,9 @@ impl Cell {
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum DoorState {
     Closed,
-    Open(f64),
-    Closing(f64),
-    Opening(f64),
+    Open(f32),
+    Closing(f32),
+    Opening(f32),
 }
 /* 
 Kinds             | Flags
@@ -104,15 +104,15 @@ impl Map {
                 // Round pillar
                 [  0,   0, 255] => Cell::new(7, 0b00000000,  0),
                 // Diagonal TL BR
-                [  0, 128,   0] => Cell::new(8, 0b0000000_0, 0),
+                [  0, 128,   0] => Cell::new(8, 0b0000000_0, 3),
                 // Diagonal TR BL
                 [  0, 255,   0] => Cell::new(8, 0b0000000_1, 0),
 
                 // Setting positions
                 // Player position
                 [255,   0, 255] => {
-                    player_spawn.x = (i % width) as f64 + 0.5;
-                    player_spawn.y = (i / width) as f64 + 0.5;
+                    player_spawn.x = (i % width) as f32 + 0.5;
+                    player_spawn.y = (i / width) as f32 + 0.5;
                     Cell::new(0, 0, 0)
                 },
                 // Nothing

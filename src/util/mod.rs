@@ -10,12 +10,12 @@ pub mod shape;
 // (cell, hit_pos, distance, texture_along, side)
 
 // (cell, distance, texture_along, brightness, side)
-type RaycastResult = Option<(usize, f64, f64, u8, u8)>;
+type RaycastResult = Option<(usize, f32, f32, u8, u8)>;
 
-pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist: f64) -> RaycastResult {
+pub fn raycast(game: &Game, start_pos: Vector2<f32>, dir: Vector2<f32>, max_dist: f32) -> RaycastResult {
     // If the ray is out of bounds, don't bother.
-    if  start_pos.x < 0.0 || start_pos.x > game.map.width  as f64 ||
-        start_pos.y < 0.0 || start_pos.y > game.map.height as f64 {
+    if  start_pos.x < 0.0 || start_pos.x > game.map.width  as f32 ||
+        start_pos.y < 0.0 || start_pos.y > game.map.height as f32 {
         return None;
     }
 
@@ -30,28 +30,28 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
     let step_y: isize;
     // Length of side in triangle formed by ray if the other side is length 1 (from one cell to the next)
     let step_size = Vector2::new(
-        f64::sqrt(1.0 + (dir.y / dir.x) * (dir.y / dir.x)),
-        f64::sqrt(1.0 + (dir.x / dir.y) * (dir.x / dir.y)),
+        f32::sqrt(1.0 + (dir.y / dir.x) * (dir.y / dir.x)),
+        f32::sqrt(1.0 + (dir.x / dir.y) * (dir.x / dir.y)),
     );
 
     // Set step and calculate from position to first intersection point
     if dir.x < 0.0 {
         step_x = -1;
-        ray_length_1d.x = (start_pos.x - map_pos.x as f64) * step_size.x;
+        ray_length_1d.x = (start_pos.x - map_pos.x as f32) * step_size.x;
     } else {
         step_x =  1;
-        ray_length_1d.x = ((map_pos.x + 1) as f64 - start_pos.x) * step_size.x;
+        ray_length_1d.x = ((map_pos.x + 1) as f32 - start_pos.x) * step_size.x;
     }
     if dir.y < 0.0 {
         step_y = -1;
-        ray_length_1d.y = (start_pos.y - map_pos.y as f64) * step_size.y;
+        ray_length_1d.y = (start_pos.y - map_pos.y as f32) * step_size.y;
     } else {
         step_y =  1;
-        ray_length_1d.y = ((map_pos.y + 1) as f64 - start_pos.y) * step_size.y;
+        ray_length_1d.y = ((map_pos.y + 1) as f32 - start_pos.y) * step_size.y;
     }
 
     // Set initially to a very small value to avoid division by zero in other functions. (Namely render_view())
-    let mut distance: f64 = 0.000000000001;
+    let mut distance: f32 = 0.000000000001;
 
     let mut side = 0;
 
@@ -74,7 +74,7 @@ pub fn raycast(game: &Game, start_pos: Vector2<f64>, dir: Vector2<f64>, max_dist
                 // https://www.permadi.com/tutorial/raycast/rayc8.html
                 let perp_dist = distance*dir.angle(&game.player.dir).cos();
 
-                let texture_along: f64;
+                let texture_along: f32;
                 // TODO: Store sides and use them to determine this :3
                 if side == 0 {
                     texture_along = (start_pos + perp_dist * dir).y.rem_euclid(1.0);

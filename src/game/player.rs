@@ -1,32 +1,32 @@
-use std::f64::consts::PI;
+use std::f32::consts::PI;
 
 use nalgebra::{point, vector, Vector2};
 
 use crate::game::collision;
 use super::map::Map;
 
-pub const PLAYER_RADIUS: f64 = 0.3; 
+pub const PLAYER_RADIUS: f32 = 0.3; 
 
 pub struct Player {
-    pub pos: Vector2<f64>,
-    pub vel: Vector2<f64>,
-    pub dir: Vector2<f64>,
-    pub pitch: f64,
-    pub head_bob_amount: f64,
-    pub cam_plane: Vector2<f64>,
+    pub pos: Vector2<f32>,
+    pub vel: Vector2<f32>,
+    pub dir: Vector2<f32>,
+    pub pitch: f32,
+    pub head_bob_amount: f32,
+    pub cam_plane: Vector2<f32>,
 
-    pub mid_ray_dist: f64,
+    pub mid_ray_dist: f32,
 }
 
 impl Player {
-    pub fn new(pos: Vector2<f64>) -> Player {
+    pub fn new(pos: Vector2<f32>) -> Player {
         Player {
             pos, dir: Vector2::new(1.0, 0.0), pitch: 0.0,
             vel: Vector2::zeros(), cam_plane: Vector2::new(-1.0, 0.0), head_bob_amount: 0.0, mid_ray_dist: 0.0,
         }
     }
 
-    pub fn step(&mut self, map: &Map, dir: Vector2<f64>, delta: f64) {
+    pub fn step(&mut self, map: &Map, dir: Vector2<f32>, delta: f32) {
         // TODO: better movement
         let dir = dir * 0.6;
         self.vel *= 1.0-(delta * 10.0).min(1.0);
