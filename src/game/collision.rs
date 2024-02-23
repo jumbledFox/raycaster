@@ -7,14 +7,6 @@ use super::player::PLAYER_RADIUS;
 
 pub type Segment = [Point2<f64>; 2];
 
-pub fn gen_segs(s: Vec<((f64, f64), (f64, f64))>) -> Vec<Segment> {
-    let mut v = vec![];
-    for i in s {
-        v.push([point![i.0.0, i.0.1], point![i.1.0, i.1.1]]);
-    }
-    v
-}
-
 // http://code.alaiwan.org/blog/collision-disk.html
 
 pub struct Collision {

@@ -7,6 +7,23 @@ use crate::game::{map::{Cell, DoorState}, Game};
 
 type HitPoint = (Point2<f64>, f64, u8);
 
+pub type Segment = [Point2<f64>; 2];
+
+// What i want to do:
+// store all shapes in some easy form, like a vector of segments
+// I don't want to regenerate them each time so I've got to hard-code the segments and generate their equations
+// Shapes are made up of lines (and maybe in the future curves, i could have an enum that has varients like line, x_line, y_line
+// (for a line, a line on the x axis, a line on the y axis, etc) then i could have a function that takes in the enum and does stuff
+
+pub enum ShapePart {
+    Line(f64, f64, f64, f64),
+    LineX(f64, f64, f64),
+    LineY(f64, f64, f64),
+}
+pub fn get_shape_segments(_cell: &Cell) {
+    
+}
+
 trait SetIfSmaller {
     fn set_if_smaller(&mut self, pos: Point2<f64>, other: Option<HitPoint>);
 }

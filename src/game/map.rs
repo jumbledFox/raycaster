@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
 use image;
-use nalgebra::Vector2;
+use nalgebra::{point, Vector2};
+
+use super::collision::Segment;
 
 // One byte for texture index
 // One byte for kind
@@ -44,6 +46,8 @@ pub struct Map {
     pub height: usize,
     pub doors: HashMap<usize, DoorState>,
     pub lightmap: Vec<u8>,
+
+    pub collision: Vec<Segment>,
 }
 
 impl Map {
@@ -115,8 +119,9 @@ impl Map {
                 _ => Cell::new(0, 0, 0),
             });
         }
-        let mut m = Map {cells, width, height, doors, lightmap: vec![]};
+        let mut m = Map {cells, width, height, doors, lightmap: vec![], collision: vec![]};
         m.calculate_lightmap();
+        m.calculate_collision();
         m
     }
 
@@ -181,5 +186,29 @@ impl Map {
                 light_level -= 1;
             }
         }
+    }
+
+    fn calculate_collision(&mut self) {
+        self.collision = vec![
+            [point![5.0, 3.0], point![5.0, 2.0]], 
+            [point![5.0, 2.0], point![5.0, 1.0]], 
+            [point![5.0, 1.0], point![4.0, 1.0]], 
+            [point![4.0, 1.0], point![3.0, 1.0]], 
+            [point![3.0, 1.0], point![2.0, 1.0]], 
+            [point![2.0, 1.0], point![1.0, 2.0]], 
+            [point![1.0, 2.0], point![1.0, 3.0]], 
+            [point![1.0, 3.0], point![1.0, 4.0]], 
+            [point![1.0, 4.0], point![2.0, 5.0]], 
+            [point![2.0, 5.0], point![3.0, 6.0]], 
+            [point![3.0, 6.0], point![4.0, 6.0]], 
+            [point![4.0, 6.0], point![4.0, 7.0]], 
+            [point![5.0, 7.0], point![5.0, 6.0]], 
+            [point![5.0, 6.0], point![6.0, 6.0]], 
+            [point![2.0, 2.0], point![2.0, 2.0]], 
+            [point![3.25, 2.25], point![3.25, 2.75]], 
+            [point![3.75, 2.25], point![3.75, 2.75]], 
+            [point![3.25, 2.25], point![3.75, 2.25]], 
+            [point![3.25, 2.75], point![3.75, 2.75]], 
+        ]
     }
 }

@@ -1,14 +1,11 @@
-use std::{f64::consts::PI, ops::Add};
+use crate::{WIDTH, HEIGHT, WIDTH_USIZE, HEIGHT_USIZE, na, Vector2, util, Game};
 
-use crate::{WIDTH, HEIGHT, WIDTH_USIZE, HEIGHT_USIZE, na, Vector2, util, game::{Game, player}, ASPECT_RATIO};
-
-use lerp::num_traits::CheckedShr;
-use na::{coordinates::X, vector};
+use na::vector;
 use pixels_primitives;
-use rand::{thread_rng, Rng};
+// use rand::{thread_rng, Rng};
 
-const GRID_SIZE: u32 = 12;
-const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this 
+// const GRID_SIZE: u32 = 12;
+// const GRID_SIZE_F64: f64 = GRID_SIZE as f64; // TODO: find out if i need this 
 
 pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
     game.player.cam_plane = Vector2::new(-game.player.dir.y, game.player.dir.x) * fov;
@@ -16,7 +13,7 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
     // floor and ceiling
     let middle = (((HEIGHT/2) as f64 - game.player.pitch) as usize).min(HEIGHT as usize-1);
 
-    let light_level = game.map.lightmap[game.map.coord_to_index(&(game.player.pos.x as usize), &(game.player.pos.y as usize))];
+    // let light_level = game.map.lightmap[game.map.coord_to_index(&(game.player.pos.x as usize), &(game.player.pos.y as usize))];
     let light_level = 15;
     let floor_col = [
         (26 / 16) * (light_level + 1),
@@ -140,7 +137,7 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
     let render_offset_w = WIDTH_USIZE  / 2 - (game.map.width  * cell_size) / 2;
     let render_offset_h = HEIGHT_USIZE / 2 - (game.map.height * cell_size) / 2;
     let render_offset = Vector2::new(render_offset_w as f64, render_offset_h as f64);
-    let map_size = Vector2::new((game.map.width * cell_size) as f64, (game.map.height * cell_size) as f64);
+    // let map_size = Vector2::new((game.map.width * cell_size) as f64, (game.map.height * cell_size) as f64);
 
     for i in 0..game.map.width {
         draw_line(screen,
@@ -172,7 +169,7 @@ pub fn render_map(screen: &mut [u8], game: &Game, cell_size: usize) {
         (game.player.pos + game.player.dir * game.player.mid_ray_dist) * cell_size as f64 + render_offset,
         &[0xDD, 0xDD, 0xDD, 0xFF]);
 
-    for seg in &game.player.segs {
+    for seg in &game.map.collision {
         draw_line(screen,
             vector![seg[0].x, seg[0].y] * cell_size as f64 + render_offset,
             vector![seg[1].x, seg[1].y] * cell_size as f64 + render_offset,

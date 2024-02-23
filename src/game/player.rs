@@ -1,8 +1,8 @@
-use std::{ops::Mul, f64::consts::PI};
+use std::f64::consts::PI;
 
-use nalgebra::{point, vector, Point2, SimdPartialOrd, Vector2};
+use nalgebra::{point, vector, Vector2};
 
-use crate::{Game, game::collision};
+use crate::game::collision;
 use super::map::Map;
 
 pub const PLAYER_RADIUS: f64 = 0.3; 
@@ -16,8 +16,6 @@ pub struct Player {
     pub cam_plane: Vector2<f64>,
 
     pub mid_ray_dist: f64,
-
-    pub segs: Vec<collision::Segment>,
 }
 
 impl Player {
@@ -25,31 +23,6 @@ impl Player {
         Player {
             pos, dir: Vector2::new(1.0, 0.0), pitch: 0.0,
             vel: Vector2::zeros(), cam_plane: Vector2::new(-1.0, 0.0), head_bob_amount: 0.0, mid_ray_dist: 0.0,
-            segs: collision::gen_segs(vec![
-                ((5.0, 3.0), (5.0, 2.0)), 
-                ((5.0, 2.0), (5.0, 1.0)), 
-                ((5.0, 1.0), (4.0, 1.0)), 
-                ((4.0, 1.0), (3.0, 1.0)), 
-                ((3.0, 1.0), (2.0, 1.0)),
-
-                ((2.0, 1.0), (1.0, 2.0)), 
-                ((1.0, 2.0), (1.0, 3.0)), 
-                ((1.0, 3.0), (1.0, 4.0)), 
-                ((1.0, 4.0), (2.0, 5.0)), 
-                ((2.0, 5.0), (3.0, 6.0)), 
-                ((3.0, 6.0), (4.0, 6.0)),
-                ((4.0, 6.0), (4.0, 7.0)),
-
-                ((5.0, 7.0), (5.0, 6.0)),
-                ((5.0, 6.0), (6.0, 6.0)),
-
-                ((2.0, 2.0), (2.0, 2.0)),
-
-                ((3.25, 2.25), (3.25, 2.75)),
-                ((3.75, 2.25), (3.75, 2.75)),
-                ((3.25, 2.25), (3.75, 2.25)),
-                ((3.25, 2.75), (3.75, 2.75)),
-            ]),
         }
     }
 
@@ -71,7 +44,7 @@ impl Player {
         let mov_delta = na::point![self.vel.x * 10.0 * delta, self.vel.y * 10.0 * delta];
 
         let mut p = point![self.pos.x, self.pos.y];
-        collision::slide_mov(&mut p, mov_delta, &self.segs);
+        collision::slide_mov(&mut p, mov_delta, &map.collision);
         self.pos = vector![p.x, p.y];
         // if map.get(map.coord_to_index(&(newpos.x.floor() as usize), &(self.pos.y.floor() as usize))).kind == 1 {
         // } else {
