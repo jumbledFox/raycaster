@@ -96,7 +96,6 @@ pub fn render_view(screen: &mut [u8], game: &mut Game, fov: f64) {
     draw_rect(screen, (WIDTH/2 - 2) as usize, (HEIGHT/2 - 2) as usize, (WIDTH/2 + 2) as usize, (HEIGHT/2 + 2) as usize, &[0xFF, 0xAA, 0x00, 0xFF]);
 }
 
-// TODO:
 // Draws a slice of a raycast
 fn draw_slice(screen: &mut [u8], game: &Game, screen_column: usize, along: f64, line_start: isize, line_end: isize, col: &[u8; 4], texture_index: usize) {
     // TODO: better way to do this

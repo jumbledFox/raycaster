@@ -127,7 +127,7 @@ impl Map {
 
     pub fn calculate_lightmap(&mut self) {
         self.lightmap = vec![0; self.width*self.height];
-        // Find where all of the light are
+        // Find where all of the lights are
         let light_positions: Vec<usize> = self.cells.iter()
             .enumerate()
             .filter(|(_, item)| item.kind == 2)
@@ -139,11 +139,11 @@ impl Map {
             let mut light_level = 16;
             
             // Which cells this light has checked
-            let mut done: Vec<usize> = vec![];
+            let mut done: Vec<usize> = Vec::with_capacity(30);
             // Positions we're currently checking
             let mut fronteir: Vec<usize> = vec![lp];
             // Holds all of the neighbours we're gonna do next.
-            let mut neighbours : Vec<usize> = vec![];
+            let mut neighbours : Vec<usize> = Vec::with_capacity(30);
 
             while light_level > 0 {
                 for &index in &fronteir {

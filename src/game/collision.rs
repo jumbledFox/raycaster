@@ -18,7 +18,7 @@ pub fn slide_mov(pos: &mut Point2<f64>, delta: Point2<f64>, segments: &Vec<Segme
     pos.x += delta.x;
     pos.y += delta.y;
 
-    for i in 0..7 {
+    for _ in 0..7 {
         if let Some(collision) = collide_with_segments(*pos, segments) {
             if collision.depth == 0.0 { break; }
             pos.x += collision.normal.x * collision.depth;

@@ -250,6 +250,7 @@ fn between_in_cell(input: f64, p1: f64, p2: f64) -> bool {
 }
 
 // Returns true if the point is behind the ray.
+// TODO ??
 fn point_behind_ray(ray_pos: Point2<f64>, ray_dir: Vector2<f64>, x_intercept: f64, y_intercept: f64) -> bool {
     ((ray_dir.x.is_sign_positive() && x_intercept < ray_pos.x) || (ray_dir.x.is_sign_negative() && x_intercept > ray_pos.x)) && 
     ((ray_dir.y.is_sign_positive() && y_intercept < ray_pos.y) || (ray_dir.y.is_sign_negative() && y_intercept > ray_pos.y))
