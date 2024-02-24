@@ -56,38 +56,37 @@ RAYCASTING:
     line_x 0.5    0.0 1.0
 
 // id : name : directionmode
-    // # means a new variant
+    // # means a new variant, anything after the # is ignored (like a comment)
     // shapes
     // varient
     // ..
 5: ThickWall : 2
-    #
+    # 0.2 thick
     quad 0.0 0.4  1.0 0.6
-
-    #
+    # 0.4 thick
     quad 0.0 0.3  1.0 0.7
-
-    #
+    # 0.6 thick
     quad 0.0 0.2  1.0 0.8
-
-    #
+    # 0.8 thick
     quad 0.0 0.1  1.0 0.9
 
 6: Pillar : 0
     // Square pillars
-    #
-    quad 0.2 0.2  0.8 0.8
-    #
+    # 0.6 thick
+    quad 0.2  0.2   0.8  0.8
+    # 0.5 thick
     quad 0.25 0.25  0.75 0.75
-    #
-    quad 0.3 0.3  0.7 0.7
-    #
-    quad 0.4 0.4  0.6 0.6
-    #
+    # 0.4 thick
+    quad 0.3  0.3   0.7  0.7
+    # 0.3 thick
+    quad 0.35 0.35  0.65 0.65
+    # 0.2 thick
+    quad 0.4  0.4   0.6  0.6
+    # 0.1 thick
     quad 0.45 0.45  0.65 0.65
 
     // Round pillars
-    #
+    # whole tile
     circle 0.5 0.5 0.5
     #
     circle 0.5 0.5 0.4
@@ -99,6 +98,8 @@ RAYCASTING:
     circle 0.5 0.5 0.2
     #
     circle 0.5 0.5 0.1
+    # smol
+    circle 0.5 0.5 0.05
 
 8: Diagonal : 1
     line_x 0.0    0.0 1.0
