@@ -23,12 +23,12 @@ impl Game {
         Game {
             // TODO: Make player position load from map
             player: Player::new(Vector2::new(13.0, 4.0)),
-            map: Map::load(String::from("res/map3.png")),
+            map: Map::load(String::from("res/images/map3.png")),
             textures: vec![
-                Texture::from_file("res/wall1.png"),
-                Texture::from_file("res/door2.png"),
-                Texture::from_file("res/elevator.png"),
-                Texture::from_file("res/map3.png"),
+                Texture::from_file("res/images/wall1.png"),
+                Texture::from_file("res/images/door2.png"),
+                Texture::from_file("res/images/elevator.png"),
+                Texture::from_file("res/images/map3.png"),
             ],
         }
     }

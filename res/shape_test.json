@@ -1,0 +1,13 @@
+{
+    "1": {
+        "name": "Diagonal",
+        "bitfields": {
+            "rotation": {
+                "length": 2
+            }
+        },
+        "shapes": [
+            
+        ]
+    }
+}

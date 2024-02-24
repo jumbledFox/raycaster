@@ -15,6 +15,8 @@ pub type Segment = [Point2<f64>; 2];
 // Shapes are made up of lines (and maybe in the future curves, i could have an enum that has varients like line, x_line, y_line
 // (for a line, a line on the x axis, a line on the y axis, etc) then i could have a function that takes in the enum and does stuff
 
+
+
 pub enum ShapePart {
     Line(f64, f64, f64, f64),
     LineX(f64, f64, f64),

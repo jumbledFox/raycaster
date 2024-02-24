@@ -5,9 +5,9 @@ use nalgebra::{point, Vector2};
 
 use super::collision::Segment;
 
-// One byte for texture index
 // One byte for kind
 // One byte for any flags
+// One byte for texture index
 pub struct Cell {
     pub kind: u8,
     pub flags: u8,
@@ -27,6 +27,7 @@ pub enum DoorState {
     Closing(f64),
     Opening(f64),
 }
+
 /* 
 Kinds             | Flags
 0 - Nothing       | None

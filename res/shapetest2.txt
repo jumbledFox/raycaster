@@ -1,0 +1,106 @@
+// direction modes:
+// 0: doesn't rotate and/or care about flags
+// 1: rotates N, E, S, W
+// 2: is either N/S or E/W, e.g. a thin wall
+
+// varient is the other 6 bits of the flag, allowing for 64 varients for each shape, which is quite a lot
+
+// What i can do is precompute all of the functions for lines and stuff and add them to a massive vec
+
+COLLISION:
+    enum Segment {
+        Line(...),
+        Circle(...),
+    }
+    // generating collision shapes
+    for shape in shapes {
+        collision_shapes.append(match shape {
+            line(p1, p2)        => Segment(Line(p1.x, p1.y, p2.x, p2.y)),
+            line_x(along, from) => Segment(Line(along, from.0, along, from.1)),
+            line_y(along, from) => Segment(Line(from.0, along, from.1, along)),
+            circle(center, radius) => todo!(),
+        });
+    }
+
+
+    // used for collision
+    let (start, end) = map.shapes.get_shape_range(&cell);
+
+    collide_disk_with_segment(pos, segment) {
+        match segment {
+            Line(..)   => {}
+            Circle(..) => {}
+        }
+    }
+    
+RAYCASTING:
+    // used for raycasting functions
+    let (start, end) = map.shapes.get_shape_range(&cell);
+    for shape in shapes[start..end] {
+        match shape {
+            line(p1, p2)        => set_if_closer(hit, line_hit(...)),
+            line_x(along, from) => set_if_closer(hit, line_x_hit(...)), 
+            line_y(along, from) => set_if_closer(hit, line_y_hit(...)),
+            circle(center, radius) => {
+                for i in circle_hit(...) {
+                    set_if_closer(hit, i);
+                }
+            }
+        }
+    }
+
+// quad bottomleft topright
+
+// id : name : directionmode
+4: ThinWall: 2
+    line_x 0.5    0.0 1.0
+
+// id : name : directionmode
+    // # means a new variant
+    // shapes
+    // varient
+    // ..
+5: ThickWall : 2
+    #
+    quad 0.0 0.4  1.0 0.6
+
+    #
+    quad 0.0 0.3  1.0 0.7
+
+    #
+    quad 0.0 0.2  1.0 0.8
+
+    #
+    quad 0.0 0.1  1.0 0.9
+
+6: Pillar : 0
+    // Square pillars
+    #
+    quad 0.2 0.2  0.8 0.8
+    #
+    quad 0.25 0.25  0.75 0.75
+    #
+    quad 0.3 0.3  0.7 0.7
+    #
+    quad 0.4 0.4  0.6 0.6
+    #
+    quad 0.45 0.45  0.65 0.65
+
+    // Round pillars
+    #
+    circle 0.5 0.5 0.5
+    #
+    circle 0.5 0.5 0.4
+    #
+    circle 0.5 0.5 0.3
+    #
+    circle 0.5 0.5 0.25
+    #
+    circle 0.5 0.5 0.2
+    #
+    circle 0.5 0.5 0.1
+
+8: Diagonal : 1
+    line_x 0.0    0.0 1.0
+    line_y 0.0    0.0 1.0
+    line 0.0 1.0  1.0 0.0

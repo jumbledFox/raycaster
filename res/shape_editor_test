@@ -1,0 +1,31 @@
+// Describes a bunch of shapes
+// Each shape has flags made up of a byte,
+// 2 bits - direction (N, E, S, W),
+// 3 bits - different kinds of these under the same shape (e.g. multiple kinds of door under 1 'Door' shape),
+// 3 are used for any other data the user wants to store, user can access the whole variable with d
+
+// user can make custom variables at the start with 
+// ID: Name
+4: ThinWall
+    line_x 0.5,   0.0, 1.0
+    line   0.0, 0.5,   1.0, 0.5
+
+// You can make variables for each shape by adding a 'vars' section before
+5_vars:
+    v1 = 0.5 + ((d+1) / 10)
+
+5: ThickWall
+    // want to go from 0.6 to 0.9 in thickness, 4 combinations
+    // https://docs.rs/mexprp/latest/mexprp/
+    variables:
+        v1 = 0.5 + ((d+1) / 10)
+
+    // thick parts
+    line 0.0, 1.0-v1,   1.0, 1.0-v1
+    line 0.0,     v1,   1.0,     v1
+    // thin parts
+    line 0.0, 1.0-v1,   0.0, v1
+    line 1.0, 1.0-v1,   1.0, v1
+
+// If the id has an 
+3_0: DoorSlide
