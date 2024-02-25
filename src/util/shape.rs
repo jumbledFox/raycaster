@@ -17,13 +17,37 @@ pub type Segment = [Point2<f64>; 2];
 
 
 
-pub enum ShapePart {
-    Line(f64, f64, f64, f64),
-    LineX(f64, f64, f64),
-    LineY(f64, f64, f64),
+pub enum Shape {
+    Line(f64, f64, f64, f64),   // pos a, pos b
+    LineX(f64, f64, f64),       // along, from
+    LineY(f64, f64, f64),       // along, from
+    Circle(f64, f64, f64),      // center, radius
 }
-pub fn get_shape_segments(_cell: &Cell) {
-    
+
+pub fn generate_shape_vector(_cell: &Cell) {
+    type CompoundShape = (Vec<Vec<Shape>>, usize); // shapes, rotation mode
+    let shape_defs: Vec<CompoundShape> = vec![
+        (vec![vec![Shape::LineX(0.5, 0.0, 1.0)]], 2), // Thin wall
+        // Pillar
+        (vec![
+            // 0.5 thick
+            vec![
+                Shape::LineX(0.25, 0.25, 0.75),
+                Shape::LineX(0.75, 0.25, 0.75),
+                Shape::LineY(0.25, 0.25, 0.75),
+                Shape::LineY(0.75, 0.25, 0.75),
+            ],
+            // 0.2 thick
+            vec![
+                Shape::LineX(0.4, 0.4, 0.6),
+                Shape::LineX(0.6, 0.4, 0.6),
+                Shape::LineY(0.4, 0.4, 0.6),
+                Shape::LineY(0.6, 0.4, 0.6),
+            ],
+        ], 0),
+
+        (vec![vec![Shape::LineX(0.0, 0.0, 1.0), Shape::LineY(0.0, 0.0, 1.0), Shape::Line(0.0, 1.0, 1.0, 0.0)]], 1), // Diagonal
+    ];
 }
 
 trait SetIfSmaller {

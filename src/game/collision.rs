@@ -5,6 +5,11 @@ use crate::game::collision;
 
 use super::player::PLAYER_RADIUS;
 
+pub enum Segm {
+    Line(f64, f64, f64, f64), // Pos A, Pos B
+    Circle(f64, f64, f64), // Center, Radius
+}
+
 pub type Segment = [Point2<f64>; 2];
 
 // http://code.alaiwan.org/blog/collision-disk.html
@@ -32,7 +37,7 @@ pub fn slide_mov(pos: &mut Point2<f64>, delta: Point2<f64>, segments: &Vec<Segme
 pub fn collide_with_segments(pos: Point2<f64>, segments: &Vec<Segment>) -> Option<Collision> {
     let mut deepest: Option<Collision> = None;
     for seg in segments {
-        if let Some(collision) = collide_disk_with_segment(pos, *seg) {
+        if let Some(collision) = collide_disk_with_segment(pos, *seg, &Segm::Line(0.0, 0.0, 1.0, 1.0)) {
             deepest = match &deepest {
                 None => Some(collision),
                 Some(d) => {
@@ -49,14 +54,19 @@ pub fn collide_with_segments(pos: Point2<f64>, segments: &Vec<Segment>) -> Optio
    deepest
 }
 
-pub fn collide_disk_with_segment(disk_center: Point2<f64>, seg: Segment) -> Option<Collision> {
-    let delta = disk_center - closest_point_on_seg(disk_center, seg);
+pub fn collide_disk_with_segment(disk_center: Point2<f64>, seg: Segment, s2: &Segm) -> Option<Collision> {
+    match s2 {
+        Segm::Line(x1, y1, x2, y2) => {
+            let delta = disk_center - closest_point_on_seg(disk_center, seg);
 
-    if point_2_cmp_mul(delta.into(), delta.into()) > PLAYER_RADIUS * PLAYER_RADIUS { return None; }
+            if point_2_cmp_mul(delta.into(), delta.into()) > PLAYER_RADIUS * PLAYER_RADIUS { return None; }
 
-    let dist = delta.magnitude();
-    let n = delta * (1.0 / dist);
-    Some(Collision { depth: PLAYER_RADIUS - dist, normal: n.into() })
+            let dist = delta.magnitude();
+            let n = delta * (1.0 / dist);
+            Some(Collision { depth: PLAYER_RADIUS - dist, normal: n.into() })
+        },
+        _ => None
+    }
 }
 
 // Returns the point from 'seg' which is closest to 'p'

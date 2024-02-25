@@ -139,14 +139,20 @@ fn main() {
                     DoorState::Opening(a) => {
                         match a - deltatime > 0.0 {
                             true  => DoorState::Opening(a - deltatime),
-                            false => DoorState::Open(5.0),
+                            false => {
+                                // update collision map to remove the door here
+                                DoorState::Open(5.0)
+                            },
                         }
                     }
                     // If the door is open, wait 5 seconds and then close it
                     DoorState::Open(a) => {
                         match a - deltatime > 0.0 {
                             true  => DoorState::Open(a - deltatime),
-                            false => DoorState::Closing(0.5),
+                            false => {
+                                // update collision map to add the door back, you should only be able to walk through if it's OPEN
+                                DoorState::Closing(0.5)
+                            },
                         }
                     }
                 };
